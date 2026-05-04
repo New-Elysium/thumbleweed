@@ -1,0 +1,62 @@
+[build-system]
+requires      = ["maturin>=1.10,<2.0"]
+build-backend = "maturin"
+
+# ── Project metadata (PEP 621) ───────────────────────────────────────────────
+[project]
+name            = "thumbleweed"
+version         = "0.1.1"
+description     = "Fast ThumbHash encode/decode – Rust-powered Python bindings"
+readme          = "README.md"
+license         = { text = "MIT" }
+requires-python = ">=3.10"
+keywords        = ["thumbhash", "image", "placeholder", "blurhash"]
+classifiers     = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Rust",
+  "Topic :: Multimedia :: Graphics",
+  "Typing :: Typed",
+]
+
+# No mandatory runtime dependencies – Pillow is optional
+dependencies = []
+
+[project.optional-dependencies]
+pillow = ["Pillow>11"]
+dev    = [
+  "Pillow>12",
+  "pytest>=9",
+  "maturin>=1.10",
+]
+
+[project.urls]
+Repository = "https://github.com/yourname/thumbhash-py"
+"Bug Tracker" = "https://github.com/yourname/thumbhash-py/issues"
+
+# ── Maturin ──────────────────────────────────────────────────────────────────
+[tool.maturin]
+# Where the Python package source lives
+python-source = "python"
+# The Rust extension will be importable as  thumbhash._core
+module-name   = "thumbhash._core"
+# Always build with the release profile
+profile       = "release"
+# Include the Rust extension module feature
+features      = ["pyo3/extension-module"]
+# Strip debug symbols for smaller wheels (already done via Cargo profile)
+strip         = true
+# Build free-threaded wheels for CPython 3.13t / 3.14t as well
+# (maturin >= 1.7 picks this up automatically when the interpreter is "t")
+compatibility = "manylinux2014"
+
+# ── Pytest ───────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
