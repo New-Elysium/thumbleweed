@@ -4,6 +4,9 @@ version = "0.1.1"
 edition = "2024"
 description = "Fast ThumbHash encode/decode – Python bindings via PyO3"
 license = "MIT"
+repository = "https://github.com/New-Elysium/thumbleweed"
+homepage = "https://github.com/New-Elysium/thumbleweed"
+documentation = "https://github.com/New-Elysium/thumbleweed#readme"
 
 [lib]
 name = "_core"
