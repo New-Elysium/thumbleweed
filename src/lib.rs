@@ -215,7 +215,10 @@ fn thumb_hash_to_rgba(hash: &[u8]) -> Result<(usize, usize, Vec<u8>), ThumbHashE
 
     let (a_dc, a_scale, ac_hash) = if has_alpha {
         if hash.len() < 6 {
-            return Err(ThumbHashError::TooShort { need: 6, got: hash.len() });
+            return Err(ThumbHashError::TooShort {
+                need: 6,
+                got: hash.len(),
+            });
         }
         (
             (hash[5] & 15) as f32 / 15.0,
@@ -342,7 +345,10 @@ fn thumb_hash_to_rgba(hash: &[u8]) -> Result<(usize, usize, Vec<u8>), ThumbHashE
 
 fn thumb_hash_to_average_rgba(hash: &[u8]) -> Result<(f32, f32, f32, f32), ThumbHashError> {
     if hash.len() < 5 {
-        return Err(ThumbHashError::TooShort { need: 5, got: hash.len() });
+        return Err(ThumbHashError::TooShort {
+            need: 5,
+            got: hash.len(),
+        });
     }
     let header = hash[0] as u32 | ((hash[1] as u32) << 8) | ((hash[2] as u32) << 16);
     let l = (header & 63) as f32 / 63.0;
@@ -351,7 +357,10 @@ fn thumb_hash_to_average_rgba(hash: &[u8]) -> Result<(f32, f32, f32, f32), Thumb
     let has_alpha = (header >> 23) != 0;
     let a = if has_alpha {
         if hash.len() < 6 {
-            return Err(ThumbHashError::TooShort { need: 6, got: hash.len() });
+            return Err(ThumbHashError::TooShort {
+                need: 6,
+                got: hash.len(),
+            });
         }
         (hash[5] & 15) as f32 / 15.0
     } else {
@@ -365,7 +374,10 @@ fn thumb_hash_to_average_rgba(hash: &[u8]) -> Result<(f32, f32, f32, f32), Thumb
 
 fn thumb_hash_to_approximate_aspect_ratio(hash: &[u8]) -> Result<f32, ThumbHashError> {
     if hash.len() < 5 {
-        return Err(ThumbHashError::TooShort { need: 5, got: hash.len() });
+        return Err(ThumbHashError::TooShort {
+            need: 5,
+            got: hash.len(),
+        });
     }
     let has_alpha = (hash[2] & 0x80) != 0;
     let l_max: u8 = if has_alpha { 5 } else { 7 };
@@ -412,12 +424,18 @@ fn encode<'py>(
     }
     let expected = w * h * 4;
     if rgba.len() != expected {
-        return Err(ThumbHashError::BufferMismatch { w, h, expected, actual: rgba.len() }.into());
+        return Err(ThumbHashError::BufferMismatch {
+            w,
+            h,
+            expected,
+            actual: rgba.len(),
+        }
+        .into());
     }
 
     // Release the GIL for the CPU-bound DCT computation.
     // `rgba` is an owned Vec - no Python objects are touched inside the closure.
-    let hash = py.allow_threads(|| rgba_to_thumb_hash(w, h, &rgba))?;
+    let hash = py.detach(|| rgba_to_thumb_hash(w, h, &rgba))?;
     Ok(PyBytes::new(py, &hash))
 }
 
@@ -443,7 +461,7 @@ fn decode<'py>(
     hash: Vec<u8>, // accepts bytes and bytearray
 ) -> PyResult<(usize, usize, Bound<'py, PyBytes>)> {
     // Release the GIL for the CPU-bound DCT decode.
-    let (w, h, rgba) = py.allow_threads(|| thumb_hash_to_rgba(&hash))?;
+    let (w, h, rgba) = py.detach(|| thumb_hash_to_rgba(&hash))?;
     Ok((w, h, PyBytes::new(py, &rgba)))
 }
 

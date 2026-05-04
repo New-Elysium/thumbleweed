@@ -1,0 +1,8 @@
+# cargo-nextest configuration
+# Note: this crate is a PyO3 extension module; Python-level tests are run
+# via pytest (see [tool.pytest.ini_options] in pyproject.toml).
+
+[profile.default]
+retries = 3
+fail-fast = false
+status-level = "all"

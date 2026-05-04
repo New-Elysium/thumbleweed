@@ -38,8 +38,8 @@ dev    = [
 ]
 
 [project.urls]
-Repository = "https://github.com/yourname/thumbhash-py"
-"Bug Tracker" = "https://github.com/yourname/thumbhash-py/issues"
+Repository = "https://github.com/New-Elysium/thumbleweed"
+"Bug Tracker" = "https://github.com/New-Elysium/thumbleweed/issues"
 
 # ── Maturin ──────────────────────────────────────────────────────────────────
 [tool.maturin]
