@@ -27,7 +27,7 @@ pip install "thumbleweed[pillow]"
 ### Raw RGBA bytes
 
 ```python
-import thumbleweed as tw
+from thumbhash import encode, decode
 
 # Encode -------------------------------------------------------------------
 # rgba_bytes must be a bytes/bytearray of length w*h*4 (R G B A, non-premult.)
@@ -45,7 +45,7 @@ ratio = tw.approximate_aspect_ratio(hash_bytes)  # width / height
 
 ```python
 from PIL import Image
-import thumbleweed as tw
+from thumbhash import encode_image, decode_image
 
 img = Image.open("photo.jpg")
 
