@@ -5,7 +5,7 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.1.1"
+version         = "0.1.2"
 description     = "Fast ThumbHash encode/decode – Rust-powered Python bindings"
 readme          = "README.md"
 license         = { text = "MIT" }
