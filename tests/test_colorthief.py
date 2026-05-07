@@ -224,11 +224,11 @@ class TestErrorHandling:
 
     def test_invalid_path(self):
         with pytest.raises(ValueError):
-            colorthief.get_color_from_file("/nonexistent/file.jpg")
+            colorthief.get_color("/nonexistent/file.jpg")
 
     def test_invalid_path_palette(self):
         with pytest.raises(ValueError):
-            colorthief.get_palette_from_file("/nonexistent/file.jpg")
+            colorthief.get_palette("/nonexistent/file.jpg")
 
 
 # ── TestFilePathAPI ──────────────────────────────────────────────────────────
@@ -242,13 +242,13 @@ class TestFilePathAPI:
         return path
 
     def test_file_based_dominant_color(self, image_path):
-        colour = colorthief.get_color_from_file(str(image_path))
+        colour = colorthief.get_color(str(image_path))
         r, g, b = colour
         assert all(isinstance(ch, int) for ch in (r, g, b))
         assert all(0 <= ch <= 255 for ch in (r, g, b))
 
     def test_file_based_palette(self, image_path):
-        palette = colorthief.get_palette_from_file(str(image_path), color_count=3)
+        palette = colorthief.get_palette(str(image_path), color_count=3)
         assert isinstance(palette, list)
         assert len(palette) > 0
         assert len(palette) <= 3

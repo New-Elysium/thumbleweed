@@ -160,8 +160,6 @@ class TestColorthiefImports:
     EXPECTED_ATTRS = [
         "get_color",
         "get_palette",
-        "get_color_from_file",
-        "get_palette_from_file",
         "ColorThief",
         "__version__",
     ]

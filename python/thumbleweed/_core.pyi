@@ -40,25 +40,6 @@ def blurhash_encode(
 
 # ── ColorThief ───────────────────────────────────────────────────────────────
 
-def colorthief_get_color(
-    image: str, quality: int | None = None
-) -> tuple[int, int, int]:
-    """Extract the dominant colour from an image at the given file path.
-
-    Parameters
-    ----------
-    image:
-        Path to the image file.
-    quality:
-        Quality/bias parameter (lower = faster, less accurate). Default 10.
-
-    Returns
-    -------
-    tuple[int, int, int]
-        ``(r, g, b)`` each in [0, 255].
-    """
-    ...
-
 def colorthief_get_color_bytes(
     image: bytes | bytearray, quality: int | None = None
 ) -> tuple[int, int, int]:
@@ -78,32 +59,9 @@ def colorthief_get_color_bytes(
     """
     ...
 
-def colorthief_get_palette(
-    image: str,
-    color_count: int | None = None,
-    quality: int | None = None,
-) -> list[tuple[int, int, int]]:
-    """Extract a colour palette from an image at the given file path.
-
-    Parameters
-    ----------
-    image:
-        Path to the image file.
-    color_count:
-        Maximum number of palette entries. Default 10.
-    quality:
-        Quality/bias parameter. Default 10.
-
-    Returns
-    -------
-    list[tuple[int, int, int]]
-        Deduplicated list of ``(r, g, b)`` colours.
-    """
-    ...
-
-# Note: image-aware helpers (encode_image, get_color_image, etc.) that accept
-# BytesIO / bytes / PIL.Image / paths live in the thumbhash, blurhash, and
-# colorthief shim packages and are re-exported by thumbleweed.__init__.
+# Note: image-aware helpers (encode_image, get_color, get_palette, etc.) that
+# accept BytesIO / bytes / PIL.Image / paths live in the thumbhash, blurhash,
+# and colorthief shim packages and are re-exported by thumbleweed.__init__.
 
 def colorthief_get_palette_bytes(
     image: bytes | bytearray,

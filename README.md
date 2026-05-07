@@ -102,7 +102,7 @@ dominant = ct.get_color(image_bytes)                    # → (r, g, b)
 palette = ct.get_palette(image_bytes, color_count=5)   # → [(r, g, b), ...]
 
 # From a file path
-dominant = ct.get_color_from_file("photo.jpg")
+dominant = ct.get_color("photo.jpg")
 
 # From a BytesIO object
 import io
@@ -188,8 +188,6 @@ thumbleweed/
 |---|---|
 | `get_color(image, quality) → (r,g,b)` | Dominant colour from `bytes`, `BytesIO`, file path, or PIL Image |
 | `get_palette(image, color_count, quality) → list[(r,g,b)]` | Colour palette from `bytes`, `BytesIO`, file path, or PIL Image |
-| `get_color_from_file(path) → (r,g,b)` | Dominant colour from a file path |
-| `get_palette_from_file(path, color_count, quality) → list[(r,g,b)]` | Palette from a file path |
 | `ColorThief(image)` | Class-based API — accepts `bytes`, `BytesIO`, file path, or PIL Image |
 
 ---

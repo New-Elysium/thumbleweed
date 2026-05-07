@@ -7,8 +7,6 @@ mod blurhash;
 mod colorthief;
 mod thumbhash;
 
-use std::path::Path;
-
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
@@ -140,30 +138,6 @@ fn blurhash_encode<'py>(
 
 // ── ColorThief Python bindings ──────────────────────────────────────────────
 
-/// Extract the dominant colour from a file path.
-///
-/// Parameters
-/// ----------
-/// image : str
-///     File path to the image.
-/// quality : int, optional
-///     Quality/bias parameter (lower = faster, less accurate). Default 10.
-///
-/// Returns
-/// -------
-/// tuple[int, int, int]
-///     ``(r, g, b)`` in [0, 255].
-#[pyfunction]
-#[pyo3(signature = (image, quality=None))]
-fn colorthief_get_color(
-    py: Python<'_>,
-    image: String,
-    quality: Option<u8>,
-) -> PyResult<(u8, u8, u8)> {
-    py.detach(|| colorthief::get_dominant_from_path(Path::new(&image), quality))
-        .map_err(PyErr::from)
-}
-
 /// Extract the dominant colour from raw image bytes.
 ///
 /// Parameters
@@ -185,34 +159,6 @@ fn colorthief_get_color_bytes(
     quality: Option<u8>,
 ) -> PyResult<(u8, u8, u8)> {
     py.detach(|| colorthief::get_dominant_from_bytes(&image, quality))
-        .map_err(PyErr::from)
-}
-
-/// Extract a colour palette from a file path.
-///
-/// Parameters
-/// ----------
-/// image : str
-///     File path to the image.
-/// color_count : int, optional
-///     Maximum number of palette entries. Default 10.
-/// quality : int, optional
-///     Quality/bias parameter. Default 10.
-///
-/// Returns
-/// -------
-/// list[tuple[int, int, int]]
-///     List of ``(r, g, b)`` tuples, each in [0, 255].
-#[pyfunction]
-#[pyo3(signature = (image, color_count=None, quality=None))]
-fn colorthief_get_palette(
-    py: Python<'_>,
-    image: String,
-    color_count: Option<u8>,
-    quality: Option<u8>,
-) -> PyResult<Vec<(u8, u8, u8)>> {
-    let path = Path::new(&image).to_path_buf();
-    py.detach(|| colorthief::get_palette_from_path(&path, color_count, quality))
         .map_err(PyErr::from)
 }
 
@@ -261,9 +207,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(blurhash_decode, m)?)?;
 
     // ColorThief
-    m.add_function(wrap_pyfunction!(colorthief_get_color, m)?)?;
     m.add_function(wrap_pyfunction!(colorthief_get_color_bytes, m)?)?;
-    m.add_function(wrap_pyfunction!(colorthief_get_palette, m)?)?;
     m.add_function(wrap_pyfunction!(colorthief_get_palette_bytes, m)?)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;

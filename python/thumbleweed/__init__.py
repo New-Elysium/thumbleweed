@@ -24,6 +24,8 @@ Quick-start
 # ColorThief — dominant colour / palette from any image source
 >>> rgb = thumbleweed.colorthief_get_color(image_path_or_bytes_or_pil)
 >>> palette = thumbleweed.colorthief_get_palette(image_path_or_bytes_or_pil)
+>>> # Or use the raw-bytes-only API:
+>>> rgb = thumbleweed.colorthief_get_color_bytes(image_bytes)
 """
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ __all__ = [
     # BlurHash — image-aware helpers
     "blurhash_encode_image",
     "blurhash_decode_image",
-    # ColorThief — raw bytes / file-path API (calls Rust directly)
+    # ColorThief — raw bytes API (calls Rust directly)
     "colorthief_get_color_bytes",
     "colorthief_get_palette_bytes",
     # ColorThief — high-level helpers (BytesIO / bytes / path / Pillow)

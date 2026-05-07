@@ -148,12 +148,8 @@ pytest >=9
 
 | Function | Input | Output | Notes |
 |----------|-------|--------|-------|
-| `get_color(image_bytes)` | encoded image bytes | `(r,g,b)` | calls Rust directly |
-| `get_palette(image_bytes, color_count, quality)` | encoded bytes | `list[(r,g,b)]` | deduplicated |
-| `get_color_from_file(path)` | file path string | `(r,g,b)` | |
-| `get_palette_from_file(path, color_count, quality)` | file path string | `list[(r,g,b)]` | |
 | `get_color(image)` | Any (see §3.3) | `(r,g,b)` | normalises input first |
-| `get_palette(image, color_count, quality)` | Any (see §3.3) | `list[(r,g,b)]` | normalises input first |
+| `get_palette(image, color_count, quality)` | Any (see §3.3) | `list[(r,g,b)]` | deduplicated, normalises input first |
 | `ColorThief(image)` | Any (see §3.3) | instance | class-based API |
 | `ColorThief.get_color(quality)` | — | `(r,g,b)` | |
 | `ColorThief.get_palette(color_count, quality)` | — | `list[(r,g,b)]` | |
@@ -181,7 +177,7 @@ cargo nextest run           # Rust tests via nextest (preferred)
 
 ### Benchmark
 ```bash
-pip install blurhash thumbhash fast-colorthief numpy
+pip install blurhash-python thumbhash-python fast-colorthief numpy
 python tests/bench_comparison.py --rounds 5 --warmup 2 --iters 500
 ```
 

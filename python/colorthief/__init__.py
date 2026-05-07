@@ -14,8 +14,8 @@ Quick-start
 >>> palette = colorthief.get_palette(image_bytes, color_count=5)
 
 >>> # From a file path
->>> dominant = colorthief.get_color_from_file("photo.jpg")
->>> palette = colorthief.get_palette_from_file("photo.jpg", color_count=5)
+>>> dominant = colorthief.get_color("photo.jpg")
+>>> palette = colorthief.get_palette("photo.jpg", color_count=5)
 
 >>> # From a BytesIO object or Pillow Image
 >>> import io
@@ -29,8 +29,6 @@ from __future__ import annotations
 __all__ = [
     "get_color",
     "get_palette",
-    "get_color_from_file",
-    "get_palette_from_file",
     "ColorThief",
     "__version__",
 ]
@@ -39,13 +37,7 @@ from thumbleweed._core import (  # type: ignore[import]
     __version__,
 )
 from thumbleweed._core import (
-    colorthief_get_color as get_color_from_file,
-)
-from thumbleweed._core import (
     colorthief_get_color_bytes as _get_color_bytes,
-)
-from thumbleweed._core import (
-    colorthief_get_palette as get_palette_from_file,
 )
 from thumbleweed._core import (
     colorthief_get_palette_bytes as _get_palette_bytes,

@@ -5,7 +5,7 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.1.4"
+version         = "0.1.5"
 description     = "Unified image hashing — ThumbHash, BlurHash, and more — Rust-powered Python bindings"
 readme          = "README.md"
 license         = { text = "MIT" }
@@ -38,8 +38,8 @@ dev    = [
   "twine>=5",
 ]
 bench = [
-  "blurhash>=1.1.5",
-  "thumbhash>=0.1.2",
+  "blurhash-python>=1.1.5",
+  "thumbhash-python>=0.1.2",
   "fast-colorthief>=0.0.5",
   "numpy>=2",
 ]
@@ -89,8 +89,8 @@ dev = [
   "twine>=5",
 ]
 bench = [
-  "blurhash>=1.1.5",
-  "thumbhash>=0.1.2",
+  "blurhash-python>=1.2.2",
+  "thumbhash-python>=1.0.1",
   "fast-colorthief>=0.0.5",
   "numpy>=2",
 ]
