@@ -173,6 +173,9 @@ make prepare
 - `make prepare` — run the real-image performance benchmark and inject the table into `CLAUDE.md`
 - `make dist` — build wheels / distributions into `dist/`
 - `make upload` — upload `dist/*` with `twine`
+- `make upload-testpypi` — upload `dist/*` to TestPyPI with `twine`
+
+The repository is uv-managed and includes a checked-in `uv.lock`.
 
 ---
 

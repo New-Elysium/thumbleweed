@@ -1,7 +1,7 @@
 UV := /root/.local/bin/uv
 PY := $(UV) run python
 
-.PHONY: sync test prepare dist upload
+.PHONY: sync test prepare dist upload upload-testpypi
 
 sync:
 	$(UV) sync --group dev --group bench
@@ -19,3 +19,6 @@ dist:
 
 upload:
 	$(UV) run twine upload dist/*
+
+upload-testpypi:
+	$(UV) run twine upload --repository testpypi dist/*

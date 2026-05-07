@@ -127,19 +127,24 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
 
+            - name: Install uv
+              uses: astral-sh/setup-uv@v6
+
             - uses: actions/download-artifact@v4
               with:
                   pattern: wheels-linux-x86_64
                   merge-multiple: true
                   path: dist
 
-            - name: Install wheel and test dependencies
+            - name: Create uv environment with test deps
+              run: uv sync --group dev
+
+            - name: Install built wheel into uv environment
               run: |
-                  pip install dist/thumbleweed-*cp${{ matrix.python-version | replace('.', '') }}*manylinux*x86_64.whl
-                  pip install "Pillow>12" pytest
+                  uv pip install dist/thumbleweed-*cp${{ matrix.python-version | replace('.', '') }}*manylinux*x86_64.whl
 
             - name: Run tests
-              run: pytest -v
+              run: uv run pytest -v
 
     publish:
         name: Publish to PyPI
