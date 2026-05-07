@@ -12,7 +12,8 @@
 #   - Rust toolchain (stable)
 set -euo pipefail
 
-cd "$(dirname "$0")"
+# cd to project root (one level up from scripts/)
+cd "$(dirname "$0")/.."
 
 # Activate the project venv (provides maturin + twine)
 if [ ! -d .venv ]; then
