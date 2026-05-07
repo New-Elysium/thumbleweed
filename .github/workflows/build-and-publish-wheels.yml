@@ -1,0 +1,167 @@
+name: Build & Publish Wheels
+
+on:
+    push:
+        tags: ["v*"]
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    CARGO_INCREMENTAL: 0
+    CARGO_NET_RETRY: 10
+    RUSTUP_MAX_RETRIES: 10
+
+jobs:
+    build:
+        name: Build ${{ matrix.platform }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # ── Linux ──────────────────────────────────────────────────────────
+                    - os: ubuntu-latest
+                      platform: linux-x86_64
+                      target: x86_64
+                      manylinux: auto
+                    - os: ubuntu-latest
+                      platform: linux-i686
+                      target: i686
+                      manylinux: auto
+                    - os: ubuntu-latest
+                      platform: linux-aarch64
+                      target: aarch64
+                      manylinux: auto
+                    - os: ubuntu-latest
+                      platform: linux-armv7
+                      target: armv7
+                      manylinux: auto
+
+                    # ── macOS ──────────────────────────────────────────────────────────
+                    - os: macos-15
+                      platform: macos-x86_64
+                      target: x86_64-apple-darwin
+                    - os: macos-latest
+                      platform: macos-aarch64
+                      target: aarch64-apple-darwin
+
+                    # ── Windows ────────────────────────────────────────────────────────
+                    - os: windows-latest
+                      platform: windows-x86_64
+                      target: x86_64-pc-windows-msvc
+                    - os: windows-latest
+                      platform: windows-i686
+                      target: i686-pc-windows-msvc
+                    - os: windows-latest
+                      platform: windows-aarch64
+                      target: aarch64-pc-windows-msvc
+
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: |
+                      3.10
+                      3.11
+                      3.12
+                      3.13
+                      3.13t
+                      3.14
+                      3.14t
+                  allow-prereleases: true
+
+            - name: Build wheels
+              uses: PyO3/maturin-action@v1
+              with:
+                  command: build
+                  args: --release --out dist
+                  target: ${{ matrix.target }}
+                  manylinux: ${{ matrix.manylinux || '' }}
+
+            - name: Upload wheels
+              uses: actions/upload-artifact@v4
+              with:
+                  name: wheels-${{ matrix.platform }}
+                  path: dist
+                  if-no-files-found: error
+
+    sdist:
+        name: Build source distribution
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: "3.x"
+
+            - name: Build sdist
+              uses: PyO3/maturin-action@v1
+              with:
+                  command: sdist
+                  args: --out dist
+
+            - name: Upload sdist
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sdist
+                  path: dist
+                  if-no-files-found: error
+
+    test:
+        name: Test wheels
+        needs: [build]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: wheels-linux-x86_64
+                  merge-multiple: true
+                  path: dist
+
+            - name: Install wheel and test dependencies
+              run: |
+                  pip install dist/thumbleweed-*cp${{ matrix.python-version | replace('.', '') }}*manylinux*x86_64.whl
+                  pip install "Pillow>12" pytest
+
+            - name: Run tests
+              run: pytest -v
+
+    publish:
+        name: Publish to PyPI
+        needs: [build, sdist, test]
+        runs-on: ubuntu-latest
+        environment: pypi
+        permissions:
+            id-token: write
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: wheels-*
+                  merge-multiple: true
+                  path: dist
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: List distributions
+              run: ls -lh dist/
+
+            - name: Publish to PyPI
+              uses: pypa/gh-action-pypi-publish@release/v1

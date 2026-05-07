@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import pathlib
 
 import colorthief
@@ -278,45 +279,34 @@ class TestErrorHandling:
 
 
 class TestFilePathAPI:
-    """Tests for the file-path API (reads real test images)."""
+    """Tests for the file/path/bytes APIs using the real test images."""
 
-    @pytest.fixture(autouse=True)
-    def _skip_no_pillow(self):
-        pytest.importorskip("PIL", reason="Pillow not installed")
+    @pytest.fixture(params=["one.jpg", "two.jpg", "four.jpg", "OPS.jpg"])
+    def image_path(self, request):
+        path = pathlib.Path(__file__).parent / request.param
+        assert path.exists(), f"Test image not found: {path}"
+        return path
 
-    def test_file_based_dominant_color(self):
-        from PIL import Image
+    def test_file_based_dominant_color(self, image_path):
+        colour = colorthief.get_color_from_file(str(image_path))
+        r, g, b = colour
+        assert all(isinstance(ch, int) for ch in (r, g, b))
+        assert all(0 <= ch <= 255 for ch in (r, g, b))
 
-        with Image.new("RGB", (16, 16), color=(0, 0, 255)) as img:
-            buf = _pil_to_bytes(img)
-            colour = colorthief.get_color(buf)
-            r, g, b = colour
-            assert b > 200, f"Expected blue, got {(r, g, b)}"
-            assert r < 50
-            assert g < 50
+    def test_file_based_palette(self, image_path):
+        palette = colorthief.get_palette_from_file(str(image_path), color_count=3)
+        assert isinstance(palette, list)
+        assert len(palette) > 0
+        assert len(palette) <= 3
 
-    def test_file_based_palette(self):
-        from PIL import Image
+    def test_class_with_file_bytes(self, image_path):
+        ct = colorthief.ColorThief(image_path.read_bytes())
+        r, g, b = ct.get_color()
+        assert all(isinstance(ch, int) for ch in (r, g, b))
+        assert all(0 <= ch <= 255 for ch in (r, g, b))
 
-        with Image.new("RGB", (16, 16), color=(255, 0, 0)) as img:
-            buf = _pil_to_bytes(img)
-            palette = colorthief.get_palette(buf, color_count=3)
-            assert isinstance(palette, list)
-            assert len(palette) > 0
-
-    def test_class_with_file(self):
-        from PIL import Image
-
-        with Image.new("RGB", (16, 16), color=(0, 255, 0)) as img:
-            buf = _pil_to_bytes(img)
-            ct = colorthief.ColorThief(buf)
-            r, g, b = ct.get_color()
-            assert g > 200
-
-
-def _pil_to_bytes(img) -> bytes:
-    import io
-
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    return buffer.getvalue()
+    def test_get_color_image_from_real_image_bytesio(self, image_path):
+        buf = io.BytesIO(image_path.read_bytes())
+        r, g, b = colorthief.get_color_image(buf)
+        assert all(isinstance(ch, int) for ch in (r, g, b))
+        assert all(0 <= ch <= 255 for ch in (r, g, b))

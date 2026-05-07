@@ -1,0 +1,513 @@
+"""
+bench_comparison.py
+===================
+Head-to-head performance benchmark:
+    thumbleweed  vs  blurhash-python  vs  thumbhash-python  vs  fast-colorthief
+
+Uses the real image fixtures in ``tests/``.
+
+Run with:
+    python tests/bench_comparison.py
+or:
+    python tests/bench_comparison.py --rounds 5 --warmup 2 --iters 200
+
+The script prints a Markdown table and also wraps the results in marker comments
+so `scripts/update_claude.py` can inject them into `CLAUDE.md`.
+"""
+
+from __future__ import annotations
+
+import argparse
+import importlib
+import statistics
+import sys
+import time
+from pathlib import Path
+from typing import Callable
+
+# ── Import helpers ───────────────────────────────────────────────────────────
+
+_PYTHON_SRC = str(Path(__file__).parent.parent / "python")
+
+
+def _import_competitor(name: str):
+    """Import a competitor package by temporarily deprioritising our python/ dir."""
+    removed = False
+    if sys.path and sys.path[0] == _PYTHON_SRC:
+        sys.path.pop(0)
+        removed = True
+    cached = sys.modules.pop(name, None)
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
+    finally:
+        if removed:
+            sys.path.insert(0, _PYTHON_SRC)
+        if cached is not None:
+            sys.modules[name] = cached
+
+
+import thumbleweed  # noqa: E402
+
+_bh_py = _import_competitor("blurhash")
+HAS_BH_PY = _bh_py is not None and hasattr(_bh_py, "components")
+
+_th_py_raw = _import_competitor("thumbhash")
+HAS_TH_PY = _th_py_raw is not None and hasattr(_th_py_raw, "rgba_to_thumb_hash")
+_th_py = _th_py_raw if HAS_TH_PY else None
+
+try:
+    import fast_colorthief as _fct  # noqa: E402
+
+    HAS_FCT = True
+except ImportError:
+    HAS_FCT = False
+
+from PIL import Image  # noqa: E402
+
+TESTS_DIR = Path(__file__).parent
+IMAGE_PATHS = [
+    TESTS_DIR / "one.jpg",
+    TESTS_DIR / "two.jpg",
+    TESTS_DIR / "four.jpg",
+    TESTS_DIR / "OPS.jpg",
+]
+
+
+# ── Fixture preparation ──────────────────────────────────────────────────────
+
+
+def _load_image(path: Path) -> Image.Image:
+    return Image.open(path).convert("RGBA")
+
+
+def _fit_thumbhash_image(img: Image.Image) -> Image.Image:
+    max_side = 100
+    w, h = img.size
+    if w > max_side or h > max_side:
+        scale = max_side / max(w, h)
+        w = max(1, round(w * scale))
+        h = max(1, round(h * scale))
+        img = img.resize((w, h), Image.LANCZOS)
+    return img
+
+
+def _fixture_data() -> dict:
+    thumbhash_images = []
+    blurhash_images = []
+    colorthief_bytes = []
+
+    for path in IMAGE_PATHS:
+        img = _load_image(path)
+        fitted = _fit_thumbhash_image(img.copy())
+        thumbhash_images.append(
+            {
+                "name": path.name,
+                "w": fitted.size[0],
+                "h": fitted.size[1],
+                "rgba": fitted.tobytes(),
+            }
+        )
+        blurhash_images.append(
+            {
+                "name": path.name,
+                "w": fitted.size[0],
+                "h": fitted.size[1],
+                "rgba": fitted.tobytes(),
+                "pil": fitted.copy(),
+            }
+        )
+        colorthief_bytes.append(
+            {
+                "name": path.name,
+                "bytes": path.read_bytes(),
+            }
+        )
+
+    return {
+        "thumbhash": thumbhash_images,
+        "blurhash": blurhash_images,
+        "colorthief": colorthief_bytes,
+    }
+
+
+FIXTURES = _fixture_data()
+
+
+# ── Benchmark harness ────────────────────────────────────────────────────────
+
+
+def _bench(
+    fn: Callable, rounds: int = 3, warmup: int = 1, iterations: int = 100
+) -> dict:
+    for _ in range(warmup):
+        for _ in range(max(1, iterations // 10)):
+            fn()
+
+    round_means: list[float] = []
+    for _ in range(rounds):
+        t0 = time.perf_counter()
+        for _ in range(iterations):
+            fn()
+        elapsed = time.perf_counter() - t0
+        round_means.append(elapsed / iterations * 1_000_000)
+
+    return {
+        "mean_us": statistics.mean(round_means),
+        "median_us": statistics.median(round_means),
+        "stdev_us": statistics.stdev(round_means) if len(round_means) > 1 else 0.0,
+        "min_us": min(round_means),
+        "max_us": max(round_means),
+    }
+
+
+def _fmt(us: float) -> str:
+    if us >= 1_000_000:
+        return f"{us / 1_000_000:.2f} s"
+    if us >= 1_000:
+        return f"{us / 1_000:.2f} ms"
+    return f"{us:.1f} µs"
+
+
+def _average(values: list[dict], key: str) -> float:
+    return statistics.mean(item[key] for item in values)
+
+
+# ── Benchmarks ───────────────────────────────────────────────────────────────
+
+
+def bench_thumbhash(rounds: int, warmup: int, iters: int) -> list[dict]:
+    rows: list[dict] = []
+
+    rust_encodes = []
+    rust_decodes = []
+    for item in FIXTURES["thumbhash"]:
+        rust_encodes.append(
+            _bench(
+                lambda item=item: thumbleweed.thumbhash_encode(
+                    item["w"], item["h"], item["rgba"]
+                ),
+                rounds,
+                warmup,
+                iters,
+            )
+        )
+    for item in FIXTURES["thumbhash"]:
+        h = thumbleweed.thumbhash_encode(item["w"], item["h"], item["rgba"])
+        rust_decodes.append(
+            _bench(lambda h=h: thumbleweed.thumbhash_decode(h), rounds, warmup, iters)
+        )
+
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "ThumbHash encode (real test images)",
+            "mean_us": _average(rust_encodes, "mean_us"),
+        }
+    )
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "ThumbHash decode (real test images)",
+            "mean_us": _average(rust_decodes, "mean_us"),
+        }
+    )
+
+    if HAS_TH_PY:
+        py_encodes = []
+        py_decodes = []
+        for item in FIXTURES["thumbhash"]:
+            rgba_list = list(item["rgba"])
+            py_encodes.append(
+                _bench(
+                    lambda item=item, rgba_list=rgba_list: _th_py.rgba_to_thumb_hash(
+                        item["w"], item["h"], rgba_list
+                    ),
+                    rounds,
+                    warmup,
+                    max(1, iters // 20),
+                )
+            )
+            hash_list = _th_py.rgba_to_thumb_hash(item["w"], item["h"], rgba_list)
+            import os
+
+            _devnull_fd = os.open(os.devnull, os.O_WRONLY)
+
+            def _decode_quiet(hash_list=hash_list):
+                old_fd = os.dup(1)
+                os.dup2(_devnull_fd, 1)
+                try:
+                    return _th_py.thumb_hash_to_rgba(hash_list)
+                finally:
+                    os.dup2(old_fd, 1)
+                    os.close(old_fd)
+
+            py_decodes.append(
+                _bench(_decode_quiet, rounds, warmup, max(1, iters // 20))
+            )
+
+        rows.append(
+            {
+                "lib": "thumbhash-python (pure Python)",
+                "op": "ThumbHash encode (real test images)",
+                "mean_us": _average(py_encodes, "mean_us"),
+            }
+        )
+        rows.append(
+            {
+                "lib": "thumbhash-python (pure Python)",
+                "op": "ThumbHash decode (real test images)",
+                "mean_us": _average(py_decodes, "mean_us"),
+            }
+        )
+    return rows
+
+
+def bench_blurhash(rounds: int, warmup: int, iters: int) -> list[dict]:
+    rows: list[dict] = []
+    rust_encodes = []
+    rust_decodes = []
+    py_encodes = []
+    py_decodes = []
+
+    import numpy as np
+
+    for item in FIXTURES["blurhash"]:
+        rust_encodes.append(
+            _bench(
+                lambda item=item: thumbleweed.blurhash_encode(
+                    item["rgba"], 4, 3, item["w"], item["h"]
+                ),
+                rounds,
+                warmup,
+                iters,
+            )
+        )
+        bh = thumbleweed.blurhash_encode(item["rgba"], 4, 3, item["w"], item["h"])
+        rust_decodes.append(
+            _bench(
+                lambda bh=bh: thumbleweed.blurhash_decode(bh, 64, 64),
+                rounds,
+                warmup,
+                iters,
+            )
+        )
+
+        if HAS_BH_PY:
+            arr = np.array(item["pil"])
+            py_encodes.append(
+                _bench(
+                    lambda arr=arr: _bh_py.encode(arr, components_x=4, components_y=3),
+                    rounds,
+                    warmup,
+                    max(1, iters // 20),
+                )
+            )
+            bh_py = _bh_py.encode(arr, components_x=4, components_y=3)
+            py_decodes.append(
+                _bench(
+                    lambda bh_py=bh_py: _bh_py.decode(bh_py, 64, 64),
+                    rounds,
+                    warmup,
+                    max(1, iters // 20),
+                )
+            )
+
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "BlurHash encode (real test images)",
+            "mean_us": _average(rust_encodes, "mean_us"),
+        }
+    )
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "BlurHash decode 64×64 (real test images)",
+            "mean_us": _average(rust_decodes, "mean_us"),
+        }
+    )
+    if HAS_BH_PY:
+        rows.append(
+            {
+                "lib": "blurhash-python (pure Python)",
+                "op": "BlurHash encode (real test images)",
+                "mean_us": _average(py_encodes, "mean_us"),
+            }
+        )
+        rows.append(
+            {
+                "lib": "blurhash-python (pure Python)",
+                "op": "BlurHash decode 64×64 (real test images)",
+                "mean_us": _average(py_decodes, "mean_us"),
+            }
+        )
+    return rows
+
+
+def bench_colorthief(rounds: int, warmup: int, iters: int) -> list[dict]:
+    rows: list[dict] = []
+    rust_dom = []
+    rust_pal = []
+    py_dom = []
+    py_pal = []
+
+    import io
+
+    for item in FIXTURES["colorthief"]:
+        raw = item["bytes"]
+        rust_dom.append(
+            _bench(
+                lambda raw=raw: thumbleweed.colorthief_get_color_bytes(raw),
+                rounds,
+                warmup,
+                iters,
+            )
+        )
+        rust_pal.append(
+            _bench(
+                lambda raw=raw: thumbleweed.colorthief_get_palette_bytes(raw, 10),
+                rounds,
+                warmup,
+                iters,
+            )
+        )
+
+        if HAS_FCT:
+
+            def _dom(raw=raw):
+                buf = io.BytesIO(raw)
+                return _fct.get_dominant_color(buf, quality=10)
+
+            def _pal(raw=raw):
+                buf = io.BytesIO(raw)
+                return _fct.get_palette(buf, color_count=10, quality=10)
+
+            py_dom.append(_bench(_dom, rounds, warmup, iters))
+            py_pal.append(_bench(_pal, rounds, warmup, iters))
+
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "ColorThief dominant (real test images)",
+            "mean_us": _average(rust_dom, "mean_us"),
+        }
+    )
+    rows.append(
+        {
+            "lib": "thumbleweed (Rust)",
+            "op": "ColorThief palette-10 (real test images)",
+            "mean_us": _average(rust_pal, "mean_us"),
+        }
+    )
+    if HAS_FCT:
+        rows.append(
+            {
+                "lib": "fast-colorthief (C ext + NumPy)",
+                "op": "ColorThief dominant (real test images)",
+                "mean_us": _average(py_dom, "mean_us"),
+            }
+        )
+        rows.append(
+            {
+                "lib": "fast-colorthief (C ext + NumPy)",
+                "op": "ColorThief palette-10 (real test images)",
+                "mean_us": _average(py_pal, "mean_us"),
+            }
+        )
+    return rows
+
+
+# ── Reporting ────────────────────────────────────────────────────────────────
+
+
+def _speedup(our_us: float | None, their_us: float | None) -> str:
+    if our_us is None or their_us is None or our_us <= 0:
+        return "—"
+    x = their_us / our_us
+    if x >= 1:
+        return f"**{x:.1f}×** faster"
+    return f"{1 / x:.1f}× slower"
+
+
+def render_markdown_table(all_rows: list[dict], rounds: int, iters: int) -> str:
+    lines: list[str] = []
+    lines.append("## Performance Benchmark Results")
+    lines.append("")
+    lines.append(
+        f"> Benchmark configuration: {rounds} rounds × {iters} iterations (pure-Python libraries use {max(1, iters // 20)} iterations)."
+    )
+    lines.append(
+        "> Input corpus: all real image fixtures in `tests/` (`one.jpg`, `two.jpg`, `four.jpg`, `OPS.jpg`)."
+    )
+    lines.append("> All times are mean per-call latency. Lower is better.")
+    lines.append("")
+
+    sections = [
+        ("ThumbHash", [r for r in all_rows if "ThumbHash" in r["op"]]),
+        ("BlurHash", [r for r in all_rows if "BlurHash" in r["op"]]),
+        ("ColorThief", [r for r in all_rows if "ColorThief" in r["op"]]),
+    ]
+
+    for section_name, rows in sections:
+        if not rows:
+            continue
+        lines.append(f"### {section_name}")
+        lines.append("")
+        lines.append("| Operation | Library | Mean latency | vs thumbleweed |")
+        lines.append("|-----------|---------|-------------|----------------|")
+        ops: dict[str, list[dict]] = {}
+        for row in rows:
+            ops.setdefault(row["op"], []).append(row)
+        for op, op_rows in ops.items():
+            ours = next(
+                (r for r in op_rows if r["lib"].startswith("thumbleweed")), None
+            )
+            our_us = ours["mean_us"] if ours else None
+            if ours:
+                lines.append(
+                    f"| {op} | {ours['lib']} | {_fmt(ours['mean_us'])} | — (baseline) |"
+                )
+            for row in op_rows:
+                if row["lib"].startswith("thumbleweed"):
+                    continue
+                lines.append(
+                    f"| {op} | {row['lib']} | {_fmt(row['mean_us'])} | {_speedup(our_us, row.get('mean_us'))} |"
+                )
+        lines.append("")
+    return "\n".join(lines)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="thumbleweed performance benchmark")
+    parser.add_argument("--rounds", type=int, default=3)
+    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--iters", type=int, default=100)
+    args = parser.parse_args()
+
+    print(f"thumbleweed benchmark — Python {sys.version.split()[0]}", flush=True)
+    print(f"Using real test images: {', '.join(path.name for path in IMAGE_PATHS)}")
+    print()
+
+    print("Running ThumbHash benchmarks...", end=" ", flush=True)
+    th_rows = bench_thumbhash(args.rounds, args.warmup, args.iters)
+    print("done")
+    print("Running BlurHash benchmarks...", end=" ", flush=True)
+    bh_rows = bench_blurhash(args.rounds, args.warmup, args.iters)
+    print("done")
+    print("Running ColorThief benchmarks...", end=" ", flush=True)
+    ct_rows = bench_colorthief(args.rounds, args.warmup, args.iters)
+    print("done")
+
+    markdown = render_markdown_table(
+        th_rows + bh_rows + ct_rows, args.rounds, args.iters
+    )
+    print()
+    print("<!-- BENCHMARK_TABLE:START -->")
+    print(markdown)
+    print("<!-- BENCHMARK_TABLE:END -->")
+
+
+if __name__ == "__main__":
+    main()

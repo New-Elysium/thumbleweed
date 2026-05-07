@@ -35,6 +35,13 @@ dev    = [
   "Pillow>12",
   "pytest>=9",
   "maturin>=1.10",
+  "twine>=5",
+]
+bench = [
+  "blurhash>=1.1.5",
+  "thumbhash>=0.1.2",
+  "fast-colorthief>=0.0.5",
+  "numpy>=2",
 ]
 
 [project.urls]
@@ -60,3 +67,21 @@ compatibility = "manylinux2014"
 # ── Pytest ───────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# ── uv ───────────────────────────────────────────────────────────────────────
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = [
+  "Pillow>12",
+  "pytest>=9",
+  "maturin>=1.10",
+  "twine>=5",
+]
+bench = [
+  "blurhash>=1.1.5",
+  "thumbhash>=0.1.2",
+  "fast-colorthief>=0.0.5",
+  "numpy>=2",
+]

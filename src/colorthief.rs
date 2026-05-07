@@ -139,6 +139,7 @@ pub fn get_dominant_from_path(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use image::ImageEncoder;
 
     fn create_solid_image(r: u8, g: u8, b: u8, a: u8) -> image::DynamicImage {
         let rgba_img = image::RgbaImage::from_pixel(8, 8, image::Rgba([r, g, b, a]));
@@ -181,12 +182,11 @@ mod tests {
     #[test]
     fn png_roundtrip_via_bytes() {
         // Build a 4×4 solid-green PNG entirely in memory.
-        use std::io::Write;
 
         let img = create_solid_image(0, 128, 0, 255);
         let mut buf = Vec::new();
         {
-            let mut encoder = image::codecs::png::PngEncoder::new(&mut buf);
+            let encoder = image::codecs::png::PngEncoder::new(&mut buf);
             let rgba = img.to_rgba8();
             encoder
                 .write_image(&rgba.into_raw(), 8, 8, image::ExtendedColorType::Rgba8)
@@ -202,13 +202,11 @@ mod tests {
 
     #[test]
     fn dominant_roundtrip_via_bytes() {
-        use std::io::Write;
-
         let img = create_solid_image(200, 50, 50, 255);
         let mut buf = Vec::new();
         let rgba = img.to_rgba8();
         {
-            let mut encoder = image::codecs::png::PngEncoder::new(&mut buf);
+            let encoder = image::codecs::png::PngEncoder::new(&mut buf);
             encoder
                 .write_image(&rgba.into_raw(), 8, 8, image::ExtendedColorType::Rgba8)
                 .unwrap();

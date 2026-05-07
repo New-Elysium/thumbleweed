@@ -21,6 +21,16 @@ pip install thumbleweed
 pip install "thumbleweed[pillow]"
 ```
 
+## Development with uv
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+make sync
+make test
+make prepare
+make dist
+```
+
 All import paths work:
 
 ```python
@@ -151,11 +161,18 @@ All of the above, prefixed with `thumbhash_` or `blurhash_`.
 ```bash
 git clone https://github.com/New-Elysium/thumbleweed.git
 cd thumbleweed
-python3 -m venv .venv && . .venv/bin/activate
-pip install "maturin>=1.10,<2" "Pillow>12" pytest
-maturin develop --release
-pytest -v
+make sync
+make test
+make prepare
 ```
+
+### Make targets
+
+- `make sync` — sync uv environment (dev + bench) and install the extension in editable mode
+- `make test` — run Python tests and Rust tests
+- `make prepare` — run the real-image performance benchmark and inject the table into `CLAUDE.md`
+- `make dist` — build wheels / distributions into `dist/`
+- `make upload` — upload `dist/*` with `twine`
 
 ---
 
