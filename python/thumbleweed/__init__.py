@@ -91,30 +91,35 @@ _thumbhash_average_rgba_raw = thumbhash_average_rgba
 _thumbhash_approximate_aspect_ratio_raw = thumbhash_approximate_aspect_ratio
 
 
-def thumbhash_average_rgba(hash_input):
+def _thumbhash_to_raw_bytes(hash_input: bytes | bytearray | str) -> bytes:
+    """Convert a ThumbHash to raw bytes, accepting either raw bytes or a base64 string."""
+    import base64
+    import binascii
+
+    if isinstance(hash_input, str):
+        try:
+            return base64.b64decode(hash_input, validate=True)
+        except binascii.Error as exc:
+            raise ValueError("Invalid base64 ThumbHash string") from exc
+    return bytes(hash_input)
+
+
+def thumbhash_average_rgba(hash_input: bytes | bytearray | str):
     """Extract the average colour from a ThumbHash.
 
     Accepts raw bytes / bytearray, or a base64-encoded string
     (as returned by :func:`thumbhash_encode_image`).
     """
-    import base64
-
-    if isinstance(hash_input, str):
-        hash_input = base64.b64decode(hash_input)
-    return _thumbhash_average_rgba_raw(hash_input)
+    return _thumbhash_average_rgba_raw(_thumbhash_to_raw_bytes(hash_input))
 
 
-def thumbhash_approximate_aspect_ratio(hash_input):
+def thumbhash_approximate_aspect_ratio(hash_input: bytes | bytearray | str):
     """Return the approximate aspect ratio (width / height) of the original image.
 
     Accepts raw bytes / bytearray, or a base64-encoded string
     (as returned by :func:`thumbhash_encode_image`).
     """
-    import base64
-
-    if isinstance(hash_input, str):
-        hash_input = base64.b64decode(hash_input)
-    return _thumbhash_approximate_aspect_ratio_raw(hash_input)
+    return _thumbhash_approximate_aspect_ratio_raw(_thumbhash_to_raw_bytes(hash_input))
 
 
 def __getattr__(name: str) -> object:

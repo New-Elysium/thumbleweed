@@ -132,8 +132,8 @@ pytest >=9
 | `decode(hash)` | ThumbHash bytes | `(w, h, rgba_bytes)` | Output ≈32 px, RGBA |
 | `average_rgba(hash)` | ThumbHash bytes | `(r,g,b,a)` floats [0,1] | RGB not premultiplied |
 | `approximate_aspect_ratio(hash)` | ThumbHash bytes | `float` | w/h of original |
-| `encode_image(image)` | Any (see §3.3) | `bytes` | Requires Pillow for non-PIL inputs |
-| `decode_image(hash)` | ThumbHash bytes | `PIL.Image` (RGBA) | Requires Pillow |
+| `encode_image(image)` | Any (see §3.3) | `str` | Base64 ThumbHash string; requires Pillow |
+| `decode_image(hash)` | Base64 ThumbHash string or raw ThumbHash bytes | `PIL.Image` (RGBA) | Requires Pillow |
 
 ### 5.2 `blurhash` / `thumbleweed.blurhash_*`
 
@@ -141,7 +141,7 @@ pytest >=9
 |----------|-------|--------|-------|
 | `encode(pixels, cx, cy, w, h)` | raw RGBA bytes, components | `str` | cx,cy ∈ [1,9] |
 | `decode(hash, w, h)` | BlurHash string, output size | `bytes` (RGBA) | alpha=255 always |
-| `encode_image(image, cx, cy)` | Any (see §3.3) | `str` | Requires Pillow for non-PIL inputs |
+| `encode_image(image, cx, cy)` | Any (see §3.3) | `str` | Requires Pillow |
 | `decode_image(hash, w, h)` | BlurHash string | `PIL.Image` (RGBA) | Requires Pillow |
 
 ### 5.3 `colorthief` / `thumbleweed.colorthief_*`

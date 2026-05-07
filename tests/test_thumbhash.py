@@ -108,6 +108,10 @@ class TestDecode:
 
 
 class TestAverageRgba:
+    def test_invalid_base64_string_raises_value_error(self):
+        with pytest.raises(ValueError, match="Invalid base64 ThumbHash string"):
+            thumbhash.average_rgba("not valid base64!")
+
     def test_opaque_image(self):
         rgba = _solid_rgba(10, 10, 255, 0, 0)  # solid red
         h = thumbhash.encode(10, 10, rgba)
@@ -129,6 +133,10 @@ class TestAverageRgba:
 
 
 class TestApproximateAspectRatio:
+    def test_invalid_base64_string_raises_value_error(self):
+        with pytest.raises(ValueError, match="Invalid base64 ThumbHash string"):
+            thumbhash.approximate_aspect_ratio("not valid base64!")
+
     def test_square(self):
         rgba = _solid_rgba(50, 50, 128, 128, 128)
         h = thumbhash.encode(50, 50, rgba)
@@ -162,6 +170,10 @@ class TestPillowIntegration:
         placeholder = thumbhash.decode_image(h)
         assert placeholder.mode == "RGBA"
         assert placeholder.size[0] > 0 and placeholder.size[1] > 0
+
+    def test_decode_image_rejects_invalid_base64_string(self):
+        with pytest.raises(ValueError, match="Invalid base64 ThumbHash string"):
+            thumbhash.decode_image("not valid base64!")
 
     def test_large_image_is_resized(self):
         from PIL import Image

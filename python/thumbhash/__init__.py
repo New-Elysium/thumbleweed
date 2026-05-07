@@ -18,7 +18,7 @@ Quick-start
 >>> hash_str = thumbhash.encode_image(img)   # returns a base64 string
 >>> placeholder = thumbhash.decode_image(hash_str)
 
->>> # From a BytesIO / bytes / file path — no Pillow required
+>>> # From a BytesIO / bytes / file path (requires Pillow for image decoding)
 >>> import io
 >>> with open("photo.jpg", "rb") as f:
 ...     hash_str = thumbhash.encode_image(f.read())
@@ -60,9 +60,13 @@ from thumbleweed._core import (
 def _to_raw_bytes(hash_input: bytes | bytearray | str) -> bytes:
     """Convert a ThumbHash to raw bytes, accepting either raw bytes or a base64 string."""
     import base64
+    import binascii
 
     if isinstance(hash_input, str):
-        return base64.b64decode(hash_input)
+        try:
+            return base64.b64decode(hash_input, validate=True)
+        except binascii.Error as exc:
+            raise ValueError("Invalid base64 ThumbHash string") from exc
     return bytes(hash_input)
 
 
@@ -104,7 +108,6 @@ def _read_bytes(source: object) -> bytes:
 
     Raises ``TypeError`` for anything else (e.g. a Pillow Image).
     """
-    import io
     import pathlib
 
     if isinstance(source, (bytes, bytearray, memoryview)):
@@ -160,8 +163,8 @@ def _decode_file_bytes_to_pil(data: bytes) -> "Image.Image":  # noqa: F821
 def encode_image(image: object) -> str:
     """Encode an image to a ThumbHash.
 
-    Accepts a wide range of input types — Pillow is only required when
-    ``image`` is a :class:`PIL.Image.Image` object:
+    Accepts a wide range of input types. Pillow is required by this helper
+    because encoded image inputs must be decoded to RGBA pixels before hashing:
 
     - :class:`PIL.Image.Image` — converted to ``RGBA`` and resized (requires
       Pillow).
@@ -184,8 +187,7 @@ def encode_image(image: object) -> str:
     Raises
     ------
     ImportError
-        If Pillow is not installed and the input is not already a decoded
-        pixel buffer.
+        If Pillow is not installed.
     TypeError
         If the input type is unsupported.
     """
@@ -233,15 +235,10 @@ def decode_image(
     ValueError
         If ``hash_input`` is invalid or too short.
     """
-    import base64
-
     _require_pillow()
     from PIL import Image  # noqa: PLC0415
 
-    if isinstance(hash_input, str):
-        hash_bytes = base64.b64decode(hash_input)
-    else:
-        hash_bytes = bytes(hash_input)
+    hash_bytes = _to_raw_bytes(hash_input)
 
     w, h, rgba_bytes = decode(hash_bytes)
     return Image.frombytes("RGBA", (w, h), rgba_bytes)

@@ -19,7 +19,7 @@ Quick-start
 >>> hash_str = blurhash.encode_image(img, 4, 3)
 >>> placeholder = blurhash.decode_image(hash_str, 64, 64)
 
->>> # From a BytesIO / bytes / file path — no Pillow required
+>>> # From a BytesIO / bytes / file path (requires Pillow for image decoding)
 >>> import io
 >>> with open("photo.jpg", "rb") as f:
 ...     hash_str = blurhash.encode_image(f.read())
@@ -87,8 +87,8 @@ def encode_image(
 ) -> str:
     """Encode an image to a BlurHash string.
 
-    Accepts a wide range of input types — Pillow is only required when
-    ``image`` is a :class:`PIL.Image.Image` object:
+    Accepts a wide range of input types. Pillow is required by this helper
+    because encoded image inputs must be decoded to RGBA pixels before hashing:
 
     - :class:`PIL.Image.Image` — converted to ``RGBA`` directly (requires
       Pillow).

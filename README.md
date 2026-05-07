@@ -94,12 +94,12 @@ import io
 # From a Pillow Image
 import thumbhash as th
 img = Image.open("photo.jpg")
-hash_bytes = th.encode_image(img)           # any mode, any size
-placeholder = th.decode_image(hash_bytes)   # → RGBA Image, ≈32 px
+hash_str = th.encode_image(img)             # base64 string; input is resized internally
+placeholder = th.decode_image(hash_str)     # → RGBA Image, ≈32 px
 
 # From a BytesIO object
 buf = io.BytesIO(open("photo.jpg", "rb").read())
-hash_bytes = th.encode_image(buf)
+hash_str = th.encode_image(buf)
 
 # BlurHash
 import blurhash as bh
@@ -136,9 +136,12 @@ palette = thief.get_palette(color_count=8)
 ```python
 import thumbleweed
 
-# ThumbHash
-hash_bytes = thumbleweed.thumbhash_encode(w, h, rgba) # NOTE: Gives Base64 string like BlurHash
-w, h, rgba = thumbleweed.thumbhash_decode(hash)
+# ThumbHash raw-pixel API
+hash_bytes = thumbleweed.thumbhash_encode(w, h, rgba)  # raw ThumbHash bytes
+w, h, rgba = thumbleweed.thumbhash_decode(hash_bytes)
+
+# ThumbHash image helper API
+hash_str = thumbleweed.thumbhash_encode_image(image_bytes)  # base64 string like BlurHash
 
 # BlurHash
 hash_str = thumbleweed.blurhash_encode(rgba, 4, 3, w, h)
@@ -185,8 +188,8 @@ thumbleweed/
 | `decode(hash) → (w, h, rgba)` | Decode ThumbHash → raw RGBA bytes |
 | `average_rgba(hash) → (r,g,b,a)` | Dominant colour in `[0, 1]` |
 | `approximate_aspect_ratio(hash) → float` | Width / height of the original image |
-| `encode_image(img) → bytes` | Encode a Pillow `Image`, `bytes`, `BytesIO`, or file path → ThumbHash |
-| `decode_image(hash) → Image` | Decode to a Pillow `Image` *(requires Pillow)* |
+| `encode_image(img) → str` | Encode a Pillow `Image`, encoded image `bytes`, `BytesIO`, or file path → base64 ThumbHash string |
+| `decode_image(hash) → Image` | Decode a base64 ThumbHash string or raw ThumbHash bytes to a Pillow `Image` *(requires Pillow)* |
 
 ### BlurHash (`import blurhash`)
 
