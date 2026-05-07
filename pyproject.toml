@@ -30,16 +30,16 @@ classifiers     = [
 dependencies = []
 
 [project.optional-dependencies]
-pillow = ["Pillow>11"]
+pillow = ["Pillow>10"]
 dev    = [
-  "Pillow>12",
+  "Pillow>10",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",
 ]
 bench = [
-  "blurhash-python>=1.1.5",
-  "thumbhash-python>=0.1.2",
+  "blurhash-python>=1.2.2",
+  "thumbhash-python>=1.0.1",
   "fast-colorthief>=0.0.5",
   "numpy>=2",
 ]
@@ -83,7 +83,7 @@ default-groups = ["dev"]
 
 [dependency-groups]
 dev = [
-  "Pillow>12",
+  "Pillow>10",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",

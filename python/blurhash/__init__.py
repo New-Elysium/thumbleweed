@@ -60,8 +60,11 @@ def _read_bytes(source: object) -> bytes:
     if isinstance(source, (bytes, bytearray, memoryview)):
         return bytes(source)
     if isinstance(source, (str, pathlib.Path)):
-        with open(source, "rb") as fh:
-            return fh.read()
+        try:
+            with open(source, "rb") as fh:
+                return fh.read()
+        except FileNotFoundError as exc:
+            raise ValueError(f"Image file not found: {source}") from exc
     if hasattr(source, "read"):
         pos = source.tell() if hasattr(source, "tell") else None
         data = source.read()
