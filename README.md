@@ -1,5 +1,20 @@
 # thumbleweed
 
+<p align="center">
+<a href="https://github.com/New-Elysium/thumbleweed/actions?query=workflow%3A%22Build+%26+Publish+Wheels%22+branch%3Amain" target="_blank">
+    <img src="https://github.com/New-Elysium/thumbleweed/actions/workflows/build-and-publish-wheels.yml/badge.svg?branch=main" alt="Build & Publish Wheels">
+</a>
+<a href="https://pypi.org/project/thumbleweed" target="_blank">
+    <img src="https://img.shields.io/pypi/v/thumbleweed?color=%2334D058&label=pypi%20package" alt="Package version">
+</a>
+<a href="https://pypi.org/project/thumbleweed" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/thumbleweed.svg?color=%2334D058" alt="Supported Python versions">
+</a>
+<a href="https://github.com/New-Elysium/thumbleweed/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/New-Elysium/thumbleweed" alt="MIT License">
+</a>
+</p>
+
 **Unified image hashing for Python — ThumbHash, BlurHash, and ColorThief.**  
 Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). Zero mandatory dependencies.
 
