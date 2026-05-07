@@ -62,6 +62,9 @@ def colorthief_get_color_bytes(
 # Note: image-aware helpers (encode_image, get_color, get_palette, etc.) that
 # accept BytesIO / bytes / PIL.Image / paths live in the thumbhash, blurhash,
 # and colorthief shim packages and are re-exported by thumbleweed.__init__.
+#
+# thumbhash_encode_image returns a base64-encoded string.
+# thumbhash_decode_image accepts base64 string or raw bytes.
 
 def colorthief_get_palette_bytes(
     image: bytes | bytearray,

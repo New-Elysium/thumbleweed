@@ -157,7 +157,7 @@ class TestPillowIntegration:
 
         img = Image.new("RGB", (80, 60), color=(255, 128, 0))
         h = thumbhash.encode_image(img)
-        assert isinstance(h, bytes) and len(h) >= 5
+        assert isinstance(h, str) and len(h) >= 5
 
         placeholder = thumbhash.decode_image(h)
         assert placeholder.mode == "RGBA"
@@ -205,7 +205,7 @@ class TestWithImageFiles:
 
         img = Image.open(image_path)
         h = thumbhash.encode_image(img)
-        assert isinstance(h, bytes)
+        assert isinstance(h, str)
         assert len(h) >= 5
 
     def test_decode_roundtrip_from_file(self, image_path):
@@ -320,7 +320,7 @@ class TestBytesIO:
         buf.seek(0)
         reloaded = Image.open(buf)
         h = thumbhash.encode_image(reloaded)
-        assert isinstance(h, bytes)
+        assert isinstance(h, str)
 
     def test_bytesio_raw_tobytes(self):
         """Use Image.tobytes() fed through BytesIO to encode."""

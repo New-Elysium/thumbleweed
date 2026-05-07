@@ -1,5 +1,4 @@
-"""
-thumbhash
+"""thumbhash
 =========
 Fast ThumbHash encode/decode for Python, backed by a Rust extension.
 
@@ -16,15 +15,15 @@ Quick-start
 >>> # From / to a Pillow Image (requires  pip install thumbleweed[pillow])
 >>> from PIL import Image
 >>> img = Image.open("photo.jpg")
->>> hash_bytes = thumbhash.encode_image(img)
->>> placeholder = thumbhash.decode_image(hash_bytes)
+>>> hash_str = thumbhash.encode_image(img)   # returns a base64 string
+>>> placeholder = thumbhash.decode_image(hash_str)
 
 >>> # From a BytesIO / bytes / file path — no Pillow required
 >>> import io
 >>> with open("photo.jpg", "rb") as f:
-...     hash_bytes = thumbhash.encode_image(f.read())
+...     hash_str = thumbhash.encode_image(f.read())
 >>> buf = io.BytesIO(open("photo.jpg", "rb").read())
->>> hash_bytes = thumbhash.encode_image(buf)
+>>> hash_str = thumbhash.encode_image(buf)
 """
 
 from __future__ import annotations
@@ -42,11 +41,11 @@ __all__ = [
 from thumbleweed._core import (  # type: ignore[import]
     __version__,
 )
-from thumbleweed._core import (
-    thumbhash_approximate_aspect_ratio as approximate_aspect_ratio,
+from thumbleweed._core import (  # type: ignore[import]
+    thumbhash_approximate_aspect_ratio as _approximate_aspect_ratio,
 )
-from thumbleweed._core import (
-    thumbhash_average_rgba as average_rgba,
+from thumbleweed._core import (  # type: ignore[import]
+    thumbhash_average_rgba as _average_rgba,
 )
 from thumbleweed._core import (
     thumbhash_decode as decode,
@@ -54,6 +53,43 @@ from thumbleweed._core import (
 from thumbleweed._core import (
     thumbhash_encode as encode,
 )
+
+# ── Helpers to accept both raw bytes and base64 strings ─────────────────────
+
+
+def _to_raw_bytes(hash_input: bytes | bytearray | str) -> bytes:
+    """Convert a ThumbHash to raw bytes, accepting either raw bytes or a base64 string."""
+    import base64
+
+    if isinstance(hash_input, str):
+        return base64.b64decode(hash_input)
+    return bytes(hash_input)
+
+
+def average_rgba(
+    hash_input: bytes | bytearray | str,
+) -> tuple[float, float, float, float]:
+    """Extract the average colour from a ThumbHash.
+
+    Accepts raw bytes / bytearray, or a base64-encoded string
+    (as returned by :func:`encode_image`).
+
+    Returns
+    -------
+    tuple[float, float, float, float]
+        ``(r, g, b, a)`` each in ``[0.0, 1.0]``. RGB is **not** premultiplied.
+    """
+    return _average_rgba(_to_raw_bytes(hash_input))
+
+
+def approximate_aspect_ratio(hash_input: bytes | bytearray | str) -> float:
+    """Return the approximate aspect ratio (width / height) of the original image.
+
+    Accepts raw bytes / bytearray, or a base64-encoded string
+    (as returned by :func:`encode_image`).
+    """
+    return _approximate_aspect_ratio(_to_raw_bytes(hash_input))
+
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -121,7 +157,7 @@ def _decode_file_bytes_to_pil(data: bytes) -> "Image.Image":  # noqa: F821
 # ── Optional Pillow helpers ──────────────────────────────────────────────────
 
 
-def encode_image(image: object) -> bytes:
+def encode_image(image: object) -> str:
     """Encode an image to a ThumbHash.
 
     Accepts a wide range of input types — Pillow is only required when
@@ -142,8 +178,8 @@ def encode_image(image: object) -> bytes:
 
     Returns
     -------
-    bytes
-        ThumbHash payload (typically 5–32 bytes).
+    str
+        Base64-encoded ThumbHash string, suitable for JSON transport.
 
     Raises
     ------
@@ -153,32 +189,37 @@ def encode_image(image: object) -> bytes:
     TypeError
         If the input type is unsupported.
     """
+    import base64
+
     # Fast path — already a Pillow Image.
     try:
         from PIL import Image  # noqa: PLC0415
 
         if isinstance(image, Image.Image):
-            return _pil_encode(image)
+            raw = _pil_encode(image)
+            return base64.b64encode(raw).decode("ascii")
     except ImportError:
         pass
 
     # For all other types, get the raw file bytes first, then use Pillow to
     # decode into pixels.
     _require_pillow()
-    raw = _read_bytes(image)
-    pil_img = _decode_file_bytes_to_pil(raw)
-    return _pil_encode(pil_img)
+    raw_bytes = _read_bytes(image)
+    pil_img = _decode_file_bytes_to_pil(raw_bytes)
+    raw = _pil_encode(pil_img)
+    return base64.b64encode(raw).decode("ascii")
 
 
 def decode_image(
-    hash_bytes: bytes | bytearray,
+    hash_input: bytes | bytearray | str,
 ) -> "Image.Image":  # noqa: F821
     """Decode a ThumbHash to a Pillow :class:`~PIL.Image.Image`.
 
     Parameters
     ----------
-    hash_bytes:
-        ThumbHash payload.
+    hash_input:
+        ThumbHash payload — either raw bytes / bytearray, or a base64-encoded
+        string (as returned by :func:`encode_image`).
 
     Returns
     -------
@@ -190,12 +231,19 @@ def decode_image(
     ImportError
         If Pillow is not installed.
     ValueError
-        If ``hash_bytes`` is invalid or too short.
+        If ``hash_input`` is invalid or too short.
     """
+    import base64
+
     _require_pillow()
     from PIL import Image  # noqa: PLC0415
 
-    w, h, rgba_bytes = decode(bytes(hash_bytes))
+    if isinstance(hash_input, str):
+        hash_bytes = base64.b64decode(hash_input)
+    else:
+        hash_bytes = bytes(hash_input)
+
+    w, h, rgba_bytes = decode(hash_bytes)
     return Image.frombytes("RGBA", (w, h), rgba_bytes)
 
 

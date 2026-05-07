@@ -18,7 +18,7 @@ Quick-start
 >>> rgba = thumbleweed.blurhash_decode(blur_str, 64, 64)
 
 >>> # ThumbHash / BlurHash — from any image source (file, BytesIO, Pillow Image …)
->>> hash_bytes = thumbleweed.thumbhash_encode_image(image_path_or_bytes_or_pil)
+>>> hash_str = thumbleweed.thumbhash_encode_image(image_path_or_bytes_or_pil)  # base64 string
 >>> blur_str = thumbleweed.blurhash_encode_image(image_path_or_bytes_or_pil)
 
 # ColorThief — dominant colour / palette from any image source
@@ -81,6 +81,40 @@ _LAZY: dict[str, tuple[str, str]] = {
     "colorthief_get_color": ("colorthief", "get_color"),
     "colorthief_get_palette": ("colorthief", "get_palette"),
 }
+
+# The raw _core functions for average_rgba and approximate_aspect_ratio
+# only accept bytes.  The thumbhash shim wraps them to also accept base64
+# strings (as returned by thumbhash_encode_image).  We expose the wrapped
+# versions as the default, but keep the raw _core originals accessible
+# via private names.
+_thumbhash_average_rgba_raw = thumbhash_average_rgba
+_thumbhash_approximate_aspect_ratio_raw = thumbhash_approximate_aspect_ratio
+
+
+def thumbhash_average_rgba(hash_input):
+    """Extract the average colour from a ThumbHash.
+
+    Accepts raw bytes / bytearray, or a base64-encoded string
+    (as returned by :func:`thumbhash_encode_image`).
+    """
+    import base64
+
+    if isinstance(hash_input, str):
+        hash_input = base64.b64decode(hash_input)
+    return _thumbhash_average_rgba_raw(hash_input)
+
+
+def thumbhash_approximate_aspect_ratio(hash_input):
+    """Return the approximate aspect ratio (width / height) of the original image.
+
+    Accepts raw bytes / bytearray, or a base64-encoded string
+    (as returned by :func:`thumbhash_encode_image`).
+    """
+    import base64
+
+    if isinstance(hash_input, str):
+        hash_input = base64.b64decode(hash_input)
+    return _thumbhash_approximate_aspect_ratio_raw(hash_input)
 
 
 def __getattr__(name: str) -> object:

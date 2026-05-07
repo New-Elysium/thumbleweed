@@ -5,12 +5,12 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.1.5"
-description     = "Unified image hashing — ThumbHash, BlurHash, and more — Rust-powered Python bindings"
+version         = "0.1.6"
+description     = "Unified image hashing & Color extraction — ThumbHash, BlurHash, and ColorThief -- 3-in-1"
 readme          = "README.md"
 license         = { text = "MIT" }
 requires-python = ">=3.10"
-keywords        = ["thumbhash", "blurhash", "colorthief", "image", "placeholder", "hashing", "rust"]
+keywords        = ["thumbhash", "blurhash", "colorthief", "image", "placeholder", "thumbnail", "hashing", "rust", "color retrieval", "color extract"]
 classifiers     = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",

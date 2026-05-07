@@ -48,7 +48,7 @@ All import paths work:
 
 ```python
 import thumbleweed   # the unified package
-import thumbhash     # ThumbHash only (backward-compatible)
+import thumbhash     # ThumbHash only
 import blurhash      # BlurHash only
 import colorthief    # ColorThief
 ```
@@ -114,7 +114,7 @@ import colorthief as ct
 
 # From encoded image bytes (PNG, JPEG, WebP, …)
 dominant = ct.get_color(image_bytes)                    # → (r, g, b)
-palette = ct.get_palette(image_bytes, color_count=5)   # → [(r, g, b), ...]
+palette = ct.get_palette(image_bytes, color_count=5)   # → [(r, g, b), (r, g, b), ...]
 
 # From a file path
 dominant = ct.get_color("photo.jpg")
@@ -137,7 +137,7 @@ palette = thief.get_palette(color_count=8)
 import thumbleweed
 
 # ThumbHash
-hash_bytes = thumbleweed.thumbhash_encode(w, h, rgba)
+hash_bytes = thumbleweed.thumbhash_encode(w, h, rgba) # NOTE: Gives Base64 string like BlurHash
 w, h, rgba = thumbleweed.thumbhash_decode(hash)
 
 # BlurHash
@@ -145,8 +145,8 @@ hash_str = thumbleweed.blurhash_encode(rgba, 4, 3, w, h)
 rgba = thumbleweed.blurhash_decode(hash_str, 64, 64)
 
 # ColorThief
-dominant = thumbleweed.colorthief_get_color_bytes(image_bytes)
-palette = thumbleweed.colorthief_get_palette_bytes(image_bytes, 5, 10)
+dominant = thumbleweed.colorthief_get_color(image_bytes)
+palette = thumbleweed.colorthief_get_palette(image_bytes, 5, 10)
 ```
 
 ---
