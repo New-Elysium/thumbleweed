@@ -119,13 +119,24 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+                include:
+                    - python-version: "3.10"
+                      python-tag: "310"
+                    - python-version: "3.11"
+                      python-tag: "311"
+                    - python-version: "3.12"
+                      python-tag: "312"
+                    - python-version: "3.13"
+                      python-tag: "313"
+                    - python-version: "3.14"
+                      python-tag: "314"
         steps:
             - uses: actions/checkout@v6
 
             - uses: actions/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
+                  allow-prereleases: true
 
             - name: Install uv
               uses: astral-sh/setup-uv@v6
@@ -141,7 +152,7 @@ jobs:
 
             - name: Install built wheel into uv environment
               run: |
-                  uv pip install dist/thumbleweed-*cp${{ matrix.python-version | replace('.', '') }}*manylinux*x86_64.whl
+                  uv pip install dist/thumbleweed-*cp${{ matrix.python-tag }}*manylinux*x86_64.whl
 
             - name: Run tests
               run: uv run pytest -v
