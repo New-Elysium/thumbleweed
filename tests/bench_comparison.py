@@ -51,10 +51,10 @@ def _import_competitor(name: str):
 import thumbleweed  # noqa: E402
 
 _bh_py = _import_competitor("blurhash")
-HAS_BH_PY = _bh_py is not None and hasattr(_bh_py, "components")
+HAS_BH_PY = _bh_py is not None and hasattr(_bh_py, "encode")
 
 _th_py_raw = _import_competitor("thumbhash")
-HAS_TH_PY = _th_py_raw is not None and hasattr(_th_py_raw, "rgba_to_thumb_hash")
+HAS_TH_PY = _th_py_raw is not None and hasattr(_th_py_raw, "image_to_thumbhash")
 _th_py = _th_py_raw if HAS_TH_PY else None
 
 try:
@@ -107,6 +107,7 @@ def _fixture_data() -> dict:
                 "w": fitted.size[0],
                 "h": fitted.size[1],
                 "rgba": fitted.tobytes(),
+                "pil": fitted.copy(),
             }
         )
         blurhash_images.append(
@@ -218,33 +219,29 @@ def bench_thumbhash(rounds: int, warmup: int, iters: int) -> list[dict]:
         py_encodes = []
         py_decodes = []
         for item in FIXTURES["thumbhash"]:
-            rgba_list = list(item["rgba"])
+            pil_img = (
+                item["pil"]
+                if "pil" in item
+                else Image.frombytes("RGBA", (item["w"], item["h"]), item["rgba"])
+            )
             py_encodes.append(
                 _bench(
-                    lambda item=item, rgba_list=rgba_list: _th_py.rgba_to_thumb_hash(
-                        item["w"], item["h"], rgba_list
-                    ),
+                    lambda pil_img=pil_img: _th_py.image_to_thumbhash(pil_img),
                     rounds,
                     warmup,
                     max(1, iters // 20),
                 )
             )
-            hash_list = _th_py.rgba_to_thumb_hash(item["w"], item["h"], rgba_list)
-            import os
-
-            _devnull_fd = os.open(os.devnull, os.O_WRONLY)
-
-            def _decode_quiet(hash_list=hash_list):
-                old_fd = os.dup(1)
-                os.dup2(_devnull_fd, 1)
-                try:
-                    return _th_py.thumb_hash_to_rgba(hash_list)
-                finally:
-                    os.dup2(old_fd, 1)
-                    os.close(old_fd)
-
+            th_hash_str = _th_py.image_to_thumbhash(pil_img)
             py_decodes.append(
-                _bench(_decode_quiet, rounds, warmup, max(1, iters // 20))
+                _bench(
+                    lambda th_hash_str=th_hash_str: _th_py.thumbhash_to_image(
+                        th_hash_str
+                    ),
+                    rounds,
+                    warmup,
+                    max(1, iters // 20),
+                )
             )
 
         rows.append(
@@ -271,8 +268,6 @@ def bench_blurhash(rounds: int, warmup: int, iters: int) -> list[dict]:
     py_encodes = []
     py_decodes = []
 
-    import numpy as np
-
     for item in FIXTURES["blurhash"]:
         rust_encodes.append(
             _bench(
@@ -295,16 +290,16 @@ def bench_blurhash(rounds: int, warmup: int, iters: int) -> list[dict]:
         )
 
         if HAS_BH_PY:
-            arr = np.array(item["pil"])
+            pil_img = item["pil"]
             py_encodes.append(
                 _bench(
-                    lambda arr=arr: _bh_py.encode(arr, components_x=4, components_y=3),
+                    lambda pil_img=pil_img: _bh_py.encode(pil_img, 4, 3),
                     rounds,
                     warmup,
                     max(1, iters // 20),
                 )
             )
-            bh_py = _bh_py.encode(arr, components_x=4, components_y=3)
+            bh_py = _bh_py.encode(pil_img, 4, 3)
             py_decodes.append(
                 _bench(
                     lambda bh_py=bh_py: _bh_py.decode(bh_py, 64, 64),
