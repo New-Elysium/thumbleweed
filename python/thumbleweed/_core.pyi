@@ -8,6 +8,10 @@ def thumbhash_encode(w: int, h: int, rgba: bytes | bytearray) -> bytes:
     """Encode raw RGBA bytes to a ThumbHash."""
     ...
 
+def thumbhash_encode_image_bytes(image: bytes | bytearray) -> bytes:
+    """Encode raw PNG/JPEG/WebP/GIF/BMP image bytes to raw ThumbHash bytes."""
+    ...
+
 def thumbhash_decode(hash: bytes | bytearray) -> tuple[int, int, bytes]:
     """Decode a ThumbHash to raw RGBA bytes."""
     ...
@@ -36,6 +40,14 @@ def blurhash_encode(
     height: int,
 ) -> str:
     """Encode RGBA pixels to a BlurHash string."""
+    ...
+
+def blurhash_encode_image_bytes(
+    image: bytes | bytearray,
+    cx: int,
+    cy: int,
+) -> str:
+    """Encode raw PNG/JPEG/WebP/GIF/BMP image bytes to a BlurHash string."""
     ...
 
 # ── ColorThief ───────────────────────────────────────────────────────────────

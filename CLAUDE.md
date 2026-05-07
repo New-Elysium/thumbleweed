@@ -89,10 +89,10 @@ All higher-level image helper functions (`encode_image`, `get_color`, `get_palet
 
 | Input type | Behaviour |
 |------------|-----------|
-| `PIL.Image.Image` | Used directly (Pillow required) |
-| `bytes` / `bytearray` / `memoryview` | Treated as encoded image data (PNG/JPEG/etc.) — decoded via Pillow |
-| File-like with `.read()` (`io.BytesIO`, open file) | Read to EOF, then decoded via Pillow |
-| `str` / `pathlib.Path` | Opened in binary mode, then decoded via Pillow |
+| `PIL.Image.Image` | Used directly by ThumbHash/BlurHash helpers (Pillow required because caller supplied a Pillow object); converted to encoded PNG bytes for ColorThief |
+| `bytes` / `bytearray` / `memoryview` | Treated as encoded image data (PNG/JPEG/WebP/GIF/BMP) — decoded in Rust via the `image` crate; no Pillow required |
+| File-like with `.read()` (`io.BytesIO`, open file) | Read to EOF, then decoded in Rust via the `image` crate; no Pillow required |
+| `str` / `pathlib.Path` | Opened in binary mode, then decoded in Rust via the `image` crate; no Pillow required |
 
 Raw pixel-level APIs (`thumbhash_encode`, `blurhash_encode`) accept `bytes`, `bytearray`, or `memoryview` of raw RGBA pixel data directly — **no Pillow required**.
 
@@ -132,7 +132,7 @@ pytest >=9
 | `decode(hash)` | ThumbHash bytes | `(w, h, rgba_bytes)` | Output ≈32 px, RGBA |
 | `average_rgba(hash)` | ThumbHash bytes | `(r,g,b,a)` floats [0,1] | RGB not premultiplied |
 | `approximate_aspect_ratio(hash)` | ThumbHash bytes | `float` | w/h of original |
-| `encode_image(image)` | Any (see §3.3) | `str` | Base64 ThumbHash string; requires Pillow |
+| `encode_image(image)` | Any (see §3.3) | `str` | Base64 ThumbHash string; Pillow required only for `PIL.Image.Image` inputs |
 | `decode_image(hash)` | Base64 ThumbHash string or raw ThumbHash bytes | `PIL.Image` (RGBA) | Requires Pillow |
 
 ### 5.2 `blurhash` / `thumbleweed.blurhash_*`
@@ -141,7 +141,7 @@ pytest >=9
 |----------|-------|--------|-------|
 | `encode(pixels, cx, cy, w, h)` | raw RGBA bytes, components | `str` | cx,cy ∈ [1,9] |
 | `decode(hash, w, h)` | BlurHash string, output size | `bytes` (RGBA) | alpha=255 always |
-| `encode_image(image, cx, cy)` | Any (see §3.3) | `str` | Requires Pillow |
+| `encode_image(image, cx, cy)` | Any (see §3.3) | `str` | Pillow required only for `PIL.Image.Image` inputs |
 | `decode_image(hash, w, h)` | BlurHash string | `PIL.Image` (RGBA) | Requires Pillow |
 
 ### 5.3 `colorthief` / `thumbleweed.colorthief_*`
@@ -277,8 +277,6 @@ The script:
 Below are natural extensions, roughly ordered by value vs. effort:
 
 ### High value / low effort
-- **`thumbhash_encode_image` without Pillow** — use the `image` Rust crate to decode image files directly in Rust (bypassing Pillow entirely), exposing a `thumbhash_encode_bytes(raw_file_bytes)` that needs zero Python dependencies
-- **`blurhash_encode_bytes(raw_file_bytes)`** — same as above for BlurHash
 - **Average/dominant colour from ThumbHash** — already exposed as `thumbhash_average_rgba()`; add a `dominant_color_from_hash()` that converts the `(r,g,b,a)` float tuple to `(int, int, int)` for easy consumption alongside ColorThief results
 - **`colorthief` quality validation in Python** — surface a named constant `colorthief.MAX_QUALITY = 10` so callers don't need to guess the range
 

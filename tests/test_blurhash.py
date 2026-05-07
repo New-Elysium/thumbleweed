@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import io
+from pathlib import Path
+
 import blurhash
 import pytest
 
@@ -210,6 +213,53 @@ class TestEdgeCases:
         assert isinstance(hash_str, str)
         decoded = blurhash.decode(hash_str, 100, 100)
         assert len(decoded) == 100 * 100 * 4
+
+
+# ── Encoded image input tests ────────────────────────────────────────────────
+
+
+class TestEncodedImageInputs:
+    @pytest.fixture(params=["one.jpg", "two.jpg", "four.jpg", "OPS.jpg"])
+    def image_path(self, request):
+        path = Path(__file__).parent / request.param
+        assert path.exists(), f"Test image not found: {path}"
+        return path
+
+    def test_encode_image_from_bytes_without_pillow_import(
+        self, image_path, monkeypatch
+    ):
+        import builtins
+
+        image_bytes = image_path.read_bytes()
+        original_import = builtins.__import__
+
+        def blocked_import(name, *args, **kwargs):
+            if name == "PIL" or name.startswith("PIL."):
+                raise ImportError("Pillow intentionally blocked")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", blocked_import)
+        hash_str = blurhash.encode_image(image_bytes, cx=4, cy=3)
+        assert isinstance(hash_str, str)
+        assert len(hash_str) >= 6
+
+    def test_encode_image_accepts_file_like_without_pillow_import(
+        self, image_path, monkeypatch
+    ):
+        import builtins
+
+        buf = io.BytesIO(image_path.read_bytes())
+        original_import = builtins.__import__
+
+        def blocked_import(name, *args, **kwargs):
+            if name == "PIL" or name.startswith("PIL."):
+                raise ImportError("Pillow intentionally blocked")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", blocked_import)
+        hash_str = blurhash.encode_image(buf, cx=4, cy=3)
+        assert isinstance(hash_str, str)
+        assert len(hash_str) >= 6
 
 
 # ── TestPillowIntegration ────────────────────────────────────────────────────

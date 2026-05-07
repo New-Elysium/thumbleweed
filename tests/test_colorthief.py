@@ -89,6 +89,17 @@ class TestColorThiefEncode:
         palette = colorthief.get_palette(png, color_count=3)
         assert len(palette) <= 3
 
+    def test_color_count_one_returns_single_colour_without_panic(self):
+        png = _make_solid_png(100, 100, 100)
+        palette = colorthief.get_palette(png, color_count=1)
+        assert isinstance(palette, list)
+        assert len(palette) == 1
+
+    def test_color_count_zero_raises_value_error(self):
+        png = _make_solid_png(100, 100, 100)
+        with pytest.raises(ValueError, match="color_count must be at least 1"):
+            colorthief.get_palette(png, color_count=0)
+
     def test_quality_parameter(self):
         png = _make_solid_png(200, 50, 50)
         for q in (1, 5, 10):

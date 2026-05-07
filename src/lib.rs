@@ -7,6 +7,7 @@ mod blurhash;
 mod colorthief;
 mod thumbhash;
 
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
@@ -36,6 +37,33 @@ fn thumbhash_encode<'py>(
     rgba: Vec<u8>,
 ) -> PyResult<Bound<'py, PyBytes>> {
     let hash = py.detach(|| thumbhash::rgba_to_thumb_hash(w, h, &rgba))?;
+    Ok(PyBytes::new(py, &hash))
+}
+
+/// Encode raw PNG/JPEG/WebP/GIF/BMP image bytes to a ThumbHash.
+///
+/// This decodes the image using Rust's `image` crate, resizes the longest side
+/// to at most 100 px, converts to RGBA, and returns the raw ThumbHash bytes.
+#[pyfunction]
+fn thumbhash_encode_image_bytes<'py>(
+    py: Python<'py>,
+    image: Vec<u8>,
+) -> PyResult<Bound<'py, PyBytes>> {
+    let hash = py.detach(|| {
+        let img = image::load_from_memory(&image)
+            .map_err(|e| PyValueError::new_err(format!("failed to decode image: {e}")))?;
+        let rgba = img.to_rgba8();
+        let (mut w, mut h) = (rgba.width(), rgba.height());
+        let resized = if w > 100 || h > 100 {
+            let scale = 100.0 / w.max(h) as f32;
+            w = ((w as f32 * scale).round() as u32).max(1);
+            h = ((h as f32 * scale).round() as u32).max(1);
+            image::imageops::resize(&rgba, w, h, image::imageops::FilterType::Lanczos3)
+        } else {
+            rgba
+        };
+        thumbhash::rgba_to_thumb_hash(w as usize, h as usize, resized.as_raw()).map_err(PyErr::from)
+    })?;
     Ok(PyBytes::new(py, &hash))
 }
 
@@ -136,6 +164,26 @@ fn blurhash_encode<'py>(
     Ok(hash)
 }
 
+/// Encode raw PNG/JPEG/WebP/GIF/BMP image bytes to a BlurHash string.
+///
+/// This decodes the image using Rust's `image` crate and converts it to RGBA
+/// pixels before running the BlurHash encoder.
+#[pyfunction]
+fn blurhash_encode_image_bytes(
+    py: Python<'_>,
+    image: Vec<u8>,
+    cx: usize,
+    cy: usize,
+) -> PyResult<String> {
+    py.detach(|| {
+        let img = image::load_from_memory(&image)
+            .map_err(|e| PyValueError::new_err(format!("failed to decode image: {e}")))?;
+        let rgba = img.to_rgba8();
+        let (w, h) = (rgba.width() as usize, rgba.height() as usize);
+        blurhash::encode(rgba.as_raw(), cx, cy, w, h).map_err(PyErr::from)
+    })
+}
+
 // ── ColorThief Python bindings ──────────────────────────────────────────────
 
 /// Extract the dominant colour from raw image bytes.
@@ -198,12 +246,14 @@ fn colorthief_get_palette_bytes(
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ThumbHash
     m.add_function(wrap_pyfunction!(thumbhash_encode, m)?)?;
+    m.add_function(wrap_pyfunction!(thumbhash_encode_image_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(thumbhash_decode, m)?)?;
     m.add_function(wrap_pyfunction!(thumbhash_average_rgba, m)?)?;
     m.add_function(wrap_pyfunction!(thumbhash_approximate_aspect_ratio, m)?)?;
 
     // BlurHash
     m.add_function(wrap_pyfunction!(blurhash_encode, m)?)?;
+    m.add_function(wrap_pyfunction!(blurhash_encode_image_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(blurhash_decode, m)?)?;
 
     // ColorThief

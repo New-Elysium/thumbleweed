@@ -188,7 +188,7 @@ thumbleweed/
 | `decode(hash) → (w, h, rgba)` | Decode ThumbHash → raw RGBA bytes |
 | `average_rgba(hash) → (r,g,b,a)` | Dominant colour in `[0, 1]` |
 | `approximate_aspect_ratio(hash) → float` | Width / height of the original image |
-| `encode_image(img) → str` | Encode a Pillow `Image`, encoded image `bytes`, `BytesIO`, or file path → base64 ThumbHash string |
+| `encode_image(img) → str` | Encode a Pillow `Image` *(Pillow required)*, or encoded image `bytes`, `BytesIO`, or file path *(no Pillow required)* → base64 ThumbHash string |
 | `decode_image(hash) → Image` | Decode a base64 ThumbHash string or raw ThumbHash bytes to a Pillow `Image` *(requires Pillow)* |
 
 ### BlurHash (`import blurhash`)
@@ -197,7 +197,7 @@ thumbleweed/
 |---|---|
 | `encode(pixels, cx, cy, w, h) → str` | Encode raw RGBA bytes → BlurHash string |
 | `decode(hash, w, h) → bytes` | Decode BlurHash → raw RGBA bytes |
-| `encode_image(img, cx, cy) → str` | Encode a Pillow `Image`, `bytes`, `BytesIO`, or file path → BlurHash |
+| `encode_image(img, cx, cy) → str` | Encode a Pillow `Image` *(Pillow required)*, or encoded image `bytes`, `BytesIO`, or file path *(no Pillow required)* → BlurHash |
 | `decode_image(hash, w, h) → Image` | Decode to a Pillow `Image` *(requires Pillow)* |
 
 ### ColorThief (`import colorthief`)

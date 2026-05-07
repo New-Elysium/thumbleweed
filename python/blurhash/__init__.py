@@ -19,7 +19,7 @@ Quick-start
 >>> hash_str = blurhash.encode_image(img, 4, 3)
 >>> placeholder = blurhash.decode_image(hash_str, 64, 64)
 
->>> # From a BytesIO / bytes / file path (requires Pillow for image decoding)
+>>> # From a BytesIO / bytes / file path — no Pillow required
 >>> import io
 >>> with open("photo.jpg", "rb") as f:
 ...     hash_str = blurhash.encode_image(f.read())
@@ -45,6 +45,9 @@ from thumbleweed._core import (
 )
 from thumbleweed._core import (
     blurhash_encode as encode,
+)
+from thumbleweed._core import (
+    blurhash_encode_image_bytes as _encode_image_bytes,
 )
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
@@ -87,16 +90,17 @@ def encode_image(
 ) -> str:
     """Encode an image to a BlurHash string.
 
-    Accepts a wide range of input types. Pillow is required by this helper
-    because encoded image inputs must be decoded to RGBA pixels before hashing:
+    Accepts a wide range of input types:
 
     - :class:`PIL.Image.Image` — converted to ``RGBA`` directly (requires
-      Pillow).
+      Pillow because the caller supplied a Pillow object).
     - :class:`bytes` / :class:`bytearray` / :class:`memoryview` — treated as
-      raw encoded image data (PNG, JPEG, WebP, etc.) and decoded via Pillow.
+      raw encoded image data (PNG, JPEG, WebP, GIF, BMP, etc.) and decoded in
+      Rust. No Pillow required.
     - :class:`io.BytesIO` or any file-like with ``.read()`` — read then
-      decoded as above.
-    - :class:`str` / :class:`pathlib.Path` — opened and decoded as above.
+      decoded as above. No Pillow required.
+    - :class:`str` / :class:`pathlib.Path` — opened and decoded as above. No
+      Pillow required.
 
     Parameters
     ----------
@@ -115,25 +119,39 @@ def encode_image(
     Raises
     ------
     ImportError
-        If Pillow is not installed.
+        If Pillow is not installed and ``image`` is a Pillow Image object.
     TypeError
         If the input type is unsupported.
     """
-    _require_pillow()
-    from PIL import Image  # noqa: PLC0415
+    import pathlib
 
-    # Normalise to a Pillow Image.
+    # Fast path for encoded image data: decode in Rust, no Pillow required.
+    if (
+        isinstance(image, (bytes, bytearray, memoryview))
+        or isinstance(image, (str, pathlib.Path))
+        or hasattr(image, "read")
+    ):
+        return _encode_image_bytes(_read_bytes(image), cx, cy)
+
+    # Pillow Image support is optional and only needed for actual PIL objects.
+    try:
+        from PIL import Image  # noqa: PLC0415
+    except ImportError as exc:
+        raise TypeError(
+            f"encode_image() does not know how to handle {type(image).__name__!r}. "
+            "Pass a Pillow Image, bytes, bytearray, BytesIO, or a file path."
+        ) from exc
+
     if isinstance(image, Image.Image):
         pil_img: Image.Image = image.convert("RGBA")
-    else:
-        import io
+        w, h = pil_img.size
+        rgba_bytes: bytes = pil_img.tobytes()
+        return encode(rgba_bytes, cx, cy, w, h)
 
-        raw = _read_bytes(image)
-        pil_img = Image.open(io.BytesIO(raw)).convert("RGBA")
-
-    w, h = pil_img.size
-    rgba_bytes: bytes = pil_img.tobytes()
-    return encode(rgba_bytes, cx, cy, w, h)
+    raise TypeError(
+        f"encode_image() does not know how to handle {type(image).__name__!r}. "
+        "Pass a Pillow Image, bytes, bytearray, BytesIO, or a file path."
+    )
 
 
 def decode_image(

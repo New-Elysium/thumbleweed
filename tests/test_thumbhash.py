@@ -220,6 +220,22 @@ class TestWithImageFiles:
         assert isinstance(h, str)
         assert len(h) >= 5
 
+    def test_encode_image_bytes_without_pillow_import(self, image_path, monkeypatch):
+        import builtins
+
+        image_bytes = image_path.read_bytes()
+        original_import = builtins.__import__
+
+        def blocked_import(name, *args, **kwargs):
+            if name == "PIL" or name.startswith("PIL."):
+                raise ImportError("Pillow intentionally blocked")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", blocked_import)
+        h = thumbhash.encode_image(image_bytes)
+        assert isinstance(h, str)
+        assert len(h) >= 5
+
     def test_decode_roundtrip_from_file(self, image_path):
         from PIL import Image
 

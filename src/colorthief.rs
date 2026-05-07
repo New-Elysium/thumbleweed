@@ -78,11 +78,29 @@ pub fn palette_from_image(
             ),
         });
     }
+    let requested_count = color_count.unwrap_or(10);
+    if requested_count == 0 {
+        return Err(ColorThiefError::ExtractionFailed {
+            message: "color_count must be at least 1".to_string(),
+        });
+    }
+
+    // The upstream `color-thief` crate asserts `max_colors > 1`. Treat a
+    // requested one-colour palette as a dominant-colour request and truncate
+    // the deduplicated result back to one entry to avoid panics across the FFI
+    // boundary.
+    let crate_count = requested_count.max(2);
+
     let (buffer, format) = image_to_buffer(img);
-    let colors = color_thief::get_palette(&buffer, format, quality_val, color_count.unwrap_or(10))
+    let colors = color_thief::get_palette(&buffer, format, quality_val, crate_count)
         .map_err(ColorThiefError::from)?;
 
-    Ok(colors.iter().map(|c| (c.r, c.g, c.b)).unique().collect())
+    Ok(colors
+        .iter()
+        .map(|c| (c.r, c.g, c.b))
+        .unique()
+        .take(requested_count as usize)
+        .collect())
 }
 
 /// Extract the dominant colour (first palette entry) from a `DynamicImage`.
