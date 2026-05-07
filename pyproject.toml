@@ -5,12 +5,12 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.1.2"
-description     = "Fast ThumbHash encode/decode – Rust-powered Python bindings"
+version         = "0.1.3"
+description     = "Unified image hashing — ThumbHash, BlurHash, and more — Rust-powered Python bindings"
 readme          = "README.md"
 license         = { text = "MIT" }
 requires-python = ">=3.10"
-keywords        = ["thumbhash", "image", "placeholder", "blurhash"]
+keywords        = ["thumbhash", "blurhash", "colorthief", "image", "placeholder", "hashing", "rust"]
 classifiers     = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -45,8 +45,8 @@ Repository = "https://github.com/New-Elysium/thumbleweed"
 [tool.maturin]
 # Where the Python package source lives
 python-source = "python"
-# The Rust extension will be importable as  thumbhash._core
-module-name   = "thumbhash._core"
+# The Rust extension will be importable as  thumbleweed._core
+module-name   = "thumbleweed._core"
 # Always build with the release profile
 profile       = "release"
 # Include the Rust extension module feature

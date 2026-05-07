@@ -1,9 +1,11 @@
 # thumbleweed
 
-**Fast ThumbHash encode/decode for Python — Rust-powered, zero mandatory dependencies.**
+**Unified image hashing for Python — ThumbHash, BlurHash, and (soon) ColorThief.**  
+Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). Zero mandatory dependencies.
 
-A drop-in replacement for [`thumbhash`](https://pypi.org/project/thumbhash/) and [`fast-thumbhash`](https://pypi.org/project/fast-thumbhash/), built with [PyO3](https://pyo3.rs/) and [maturin](https://www.maturin.rs/).
-
+- ✅ **ThumbHash** — compact image placeholder hashes (drop-in for [`thumbhash`](https://pypi.org/project/thumbhash/) & [`fast-thumbhash`](https://pypi.org/project/fast-thumbhash/))
+- ✅ **BlurHash** — smooth gradient placeholders (drop-in for [`blurhash-python`](https://pypi.org/project/blurhash/))
+- 🔜 **ColorThief** — dominant colour extraction *(placeholder, not yet implemented)*
 - ✅ Python 3.10 – 3.14 (including free-threaded `3.13t` / `3.14t`)
 - ✅ Pillow > 11 integration (optional)
 - ✅ Typed (`py.typed` + `.pyi` stubs)
@@ -19,13 +21,20 @@ pip install thumbleweed
 pip install "thumbleweed[pillow]"
 ```
 
-Both `import thumbhash` and `import thumbleweed` work.
+All import paths work:
+
+```python
+import thumbleweed   # the unified package
+import thumbhash     # ThumbHash only (backward-compatible)
+import blurhash      # BlurHash only
+import colorthief    # ColorThief (placeholder)
+```
 
 ---
 
 ## Quick-start
 
-### Raw RGBA bytes
+### ThumbHash
 
 ```python
 import thumbhash as th
@@ -41,33 +50,99 @@ r, g, b, a = th.average_rgba(hash_bytes)           # dominant colour [0, 1]
 ratio = th.approximate_aspect_ratio(hash_bytes)     # width / height
 ```
 
+### BlurHash
+
+```python
+import blurhash as bh
+
+# Encode
+hash_str: str = bh.encode(rgba_bytes, cx=4, cy=3, width=w, height=h)
+
+# Decode
+rgba: bytes = bh.decode(hash_str, width=64, height=64)
+```
+
 ### Pillow images
 
 ```python
 from PIL import Image
+
+# ThumbHash
 import thumbhash as th
-
 img = Image.open("photo.jpg")
+hash_bytes = th.encode_image(img)           # any mode, any size
+placeholder = th.decode_image(hash_bytes)   # → RGBA Image, ≈32 px
 
-hash_bytes = th.encode_image(img)                   # any mode, any size
-placeholder = th.decode_image(hash_bytes)           # → RGBA Image, ≈32 px
-placeholder.save("placeholder.png")
+# BlurHash
+import blurhash as bh
+hash_str = bh.encode_image(img, cx=4, cy=3)
+placeholder = bh.decode_image(hash_str, width=64, height=64)
 ```
 
-`encode_image` automatically converts to RGBA and shrinks the longest side to ≤ 100 px (the algorithm's hard limit).
+### thumbleweed (unified)
+
+```python
+import thumbleweed
+
+# ThumbHash
+hash_bytes = thumbleweed.thumbhash_encode(w, h, rgba)
+w, h, rgba = thumbleweed.thumbhash_decode(hash)
+
+# BlurHash
+hash_str = thumbleweed.blurhash_encode(rgba, 4, 3, w, h)
+rgba = thumbleweed.blurhash_decode(hash_str, 64, 64)
+```
+
+---
+
+## Project structure
+
+```
+thumbleweed/
+├── src/
+│   ├── lib.rs            # PyO3 module — Python bindings
+│   ├── thumbhash.rs      # Pure Rust ThumbHash encode/decode
+│   ├── blurhash.rs       # Pure Rust BlurHash encode/decode
+│   └── colorthief.rs     # Placeholder for future color extraction
+├── python/
+│   ├── thumbleweed/      # Main package — re-exports everything
+│   ├── thumbhash/        # Backward-compatible ThumbHash shim
+│   ├── blurhash/         # BlurHash shim
+│   └── colorthief/       # Placeholder shim
+├── tests/
+│   ├── test_thumbhash.py # 70 ThumbHash tests
+│   ├── test_blurhash.py  # 28 BlurHash tests
+│   └── test_imports.py   # 13 import / version-consistency tests
+└── Cargo.toml
+```
 
 ---
 
 ## API reference
 
+### ThumbHash (`import thumbhash`)
+
 | Function | Description |
 |---|---|
 | `encode(w, h, rgba) → bytes` | Encode raw RGBA bytes → ThumbHash |
 | `decode(hash) → (w, h, rgba)` | Decode ThumbHash → raw RGBA bytes |
-| `average_rgba(hash) → (r,g,b,a)` | Dominant colour in [0, 1] |
+| `average_rgba(hash) → (r,g,b,a)` | Dominant colour in `[0, 1]` |
 | `approximate_aspect_ratio(hash) → float` | Width / height of the original image |
 | `encode_image(img) → bytes` | Encode a Pillow `Image` *(requires Pillow)* |
-| `decode_image(hash) → Image` | Decode a ThumbHash to a Pillow `Image` *(requires Pillow)* |
+| `decode_image(hash) → Image` | Decode to a Pillow `Image` *(requires Pillow)* |
+
+### BlurHash (`import blurhash`)
+
+| Function | Description |
+|---|---|
+| `encode(pixels, cx, cy, w, h) → str` | Encode raw RGBA bytes → BlurHash string |
+| `decode(hash, w, h) → bytes` | Decode BlurHash → raw RGBA bytes |
+| `encode_image(img, cx, cy) → str` | Encode a Pillow `Image` *(requires Pillow)* |
+| `decode_image(hash, w, h) → Image` | Decode to a Pillow `Image` *(requires Pillow)* |
+
+### thumbleweed (`import thumbleweed`)
+
+All of the above, prefixed with `thumbhash_` or `blurhash_`.
 
 ---
 
