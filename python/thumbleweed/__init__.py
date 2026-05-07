@@ -21,9 +21,9 @@ Quick-start
 >>> hash_bytes = thumbleweed.thumbhash_encode_image(image_path_or_bytes_or_pil)
 >>> blur_str = thumbleweed.blurhash_encode_image(image_path_or_bytes_or_pil)
 
->>> # ColorThief — dominant colour / palette from any image source
->>> rgb = thumbleweed.colorthief_get_color_image(image_path_or_bytes_or_pil)
->>> palette = thumbleweed.colorthief_get_palette_image(image_path_or_bytes_or_pil)
+# ColorThief — dominant colour / palette from any image source
+>>> rgb = thumbleweed.colorthief_get_color(image_path_or_bytes_or_pil)
+>>> palette = thumbleweed.colorthief_get_palette(image_path_or_bytes_or_pil)
 """
 
 from __future__ import annotations
@@ -44,13 +44,11 @@ __all__ = [
     "blurhash_encode_image",
     "blurhash_decode_image",
     # ColorThief — raw bytes / file-path API (calls Rust directly)
-    "colorthief_get_color",
     "colorthief_get_color_bytes",
-    "colorthief_get_palette",
     "colorthief_get_palette_bytes",
-    # ColorThief — image-aware helpers (Pillow / BytesIO / path)
-    "colorthief_get_color_image",
-    "colorthief_get_palette_image",
+    # ColorThief — high-level helpers (BytesIO / bytes / path / Pillow)
+    "colorthief_get_color",
+    "colorthief_get_palette",
     # Metadata
     "__version__",
 ]
@@ -60,9 +58,7 @@ from thumbleweed._core import (  # type: ignore[import]
     __version__,
     blurhash_decode,
     blurhash_encode,
-    colorthief_get_color,
     colorthief_get_color_bytes,
-    colorthief_get_palette,
     colorthief_get_palette_bytes,
     thumbhash_approximate_aspect_ratio,
     thumbhash_average_rgba,
@@ -80,8 +76,8 @@ _LAZY: dict[str, tuple[str, str]] = {
     "thumbhash_decode_image": ("thumbhash", "decode_image"),
     "blurhash_encode_image": ("blurhash", "encode_image"),
     "blurhash_decode_image": ("blurhash", "decode_image"),
-    "colorthief_get_color_image": ("colorthief", "get_color_image"),
-    "colorthief_get_palette_image": ("colorthief", "get_palette_image"),
+    "colorthief_get_color": ("colorthief", "get_color"),
+    "colorthief_get_palette": ("colorthief", "get_palette"),
 }
 
 

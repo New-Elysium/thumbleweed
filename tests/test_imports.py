@@ -42,8 +42,6 @@ class TestThumbleweedImports:
         "colorthief_get_color_bytes",
         "colorthief_get_palette",
         "colorthief_get_palette_bytes",
-        "colorthief_get_color_image",
-        "colorthief_get_palette_image",
     ]
     THUMBHASH_IMAGE_ATTRS = [
         "thumbhash_encode_image",
@@ -164,8 +162,6 @@ class TestColorthiefImports:
         "get_palette",
         "get_color_from_file",
         "get_palette_from_file",
-        "get_color_image",
-        "get_palette_image",
         "ColorThief",
         "__version__",
     ]

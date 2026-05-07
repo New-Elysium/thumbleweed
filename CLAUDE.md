@@ -45,7 +45,7 @@ thumbleweed/
 │   ├── blurhash/
 │   │   └── __init__.py         # Backward-compatible shim; encode_image / decode_image helpers
 │   └── colorthief/
-│       └── __init__.py         # Compatibility shim; get_color_image / get_palette_image / ColorThief
+│       └── __init__.py         # Compatibility shim; get_color / get_palette / ColorThief
 ├── tests/
 │   ├── test_thumbhash.py       # 70+ ThumbHash tests (raw bytes, Pillow, BytesIO, edge cases)
 │   ├── test_blurhash.py        # 28+ BlurHash tests
@@ -81,11 +81,11 @@ Three compatibility packages (`thumbhash`, `blurhash`, `colorthief`) mirror the 
 
 Each shim imports exclusively from `thumbleweed._core` — **never** from `thumbleweed` — to avoid circular imports.
 
-`thumbleweed/__init__.py` imports core functions eagerly from `_core`, then re-exports the `encode_image`/`decode_image`/`get_color_image`/`get_palette_image` helpers **lazily** via `__getattr__` to avoid the circular import that would arise from importing the shim packages at module load time.
+`thumbleweed/__init__.py` imports core functions eagerly from `_core`, then re-exports the higher-level `encode_image`/`decode_image` helpers and strict ColorThief `get_color`/`get_palette` helpers **lazily** via `__getattr__` to avoid the circular import that would arise from importing the shim packages at module load time.
 
 ### 3.3 Input normalisation
 
-All `encode_image` / `get_color_image` / `get_palette_image` style functions accept:
+All higher-level image helper functions (`encode_image`, `get_color`, `get_palette`) accept:
 
 | Input type | Behaviour |
 |------------|-----------|
@@ -152,8 +152,8 @@ pytest >=9
 | `get_palette(image_bytes, color_count, quality)` | encoded bytes | `list[(r,g,b)]` | deduplicated |
 | `get_color_from_file(path)` | file path string | `(r,g,b)` | |
 | `get_palette_from_file(path, color_count, quality)` | file path string | `list[(r,g,b)]` | |
-| `get_color_image(image)` | Any (see §3.3) | `(r,g,b)` | normalises input first |
-| `get_palette_image(image, color_count, quality)` | Any (see §3.3) | `list[(r,g,b)]` | normalises input first |
+| `get_color(image)` | Any (see §3.3) | `(r,g,b)` | normalises input first |
+| `get_palette(image, color_count, quality)` | Any (see §3.3) | `list[(r,g,b)]` | normalises input first |
 | `ColorThief(image)` | Any (see §3.3) | instance | class-based API |
 | `ColorThief.get_color(quality)` | — | `(r,g,b)` | |
 | `ColorThief.get_palette(color_count, quality)` | — | `list[(r,g,b)]` | |
