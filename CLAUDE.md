@@ -230,28 +230,28 @@ The script:
 
 | Operation | Library | Mean latency | vs thumbleweed |
 |-----------|---------|-------------|----------------|
-| ThumbHash encode (real test images) | thumbleweed (Rust) | 818.7 µs | — (baseline) |
-| ThumbHash encode (real test images) | thumbhash-python (pure Python) | 24.37 ms | **29.8×** faster |
-| ThumbHash decode (real test images) | thumbleweed (Rust) | 57.9 µs | — (baseline) |
-| ThumbHash decode (real test images) | thumbhash-python (pure Python) | 4.75 ms | **82.1×** faster |
+| ThumbHash encode (real test images) | thumbleweed (Rust) | 825.4 µs | — (baseline) |
+| ThumbHash encode (real test images) | thumbhash-python (pure Python) | 27.26 ms | **33.0×** faster |
+| ThumbHash decode (real test images) | thumbleweed (Rust) | 56.4 µs | — (baseline) |
+| ThumbHash decode (real test images) | thumbhash-python (pure Python) | 5.49 ms | **97.3×** faster |
 
 ### BlurHash
 
 | Operation | Library | Mean latency | vs thumbleweed |
 |-----------|---------|-------------|----------------|
-| BlurHash encode (real test images) | thumbleweed (Rust) | 4.86 ms | — (baseline) |
-| BlurHash encode (real test images) | blurhash-python (pure Python) | 41.23 ms | **8.5×** faster |
-| BlurHash decode 64×64 (real test images) | thumbleweed (Rust) | 845.7 µs | — (baseline) |
-| BlurHash decode 64×64 (real test images) | blurhash-python (pure Python) | 27.64 ms | **32.7×** faster |
+| BlurHash encode (real test images) | thumbleweed (Rust) | 4.98 ms | — (baseline) |
+| BlurHash encode (real test images) | blurhash-python (pure Python) | 4.42 ms | 1.1× slower |
+| BlurHash decode 64×64 (real test images) | thumbleweed (Rust) | 902.4 µs | — (baseline) |
+| BlurHash decode 64×64 (real test images) | blurhash-python (pure Python) | 842.2 µs | 1.1× slower |
 
 ### ColorThief
 
 | Operation | Library | Mean latency | vs thumbleweed |
 |-----------|---------|-------------|----------------|
-| ColorThief dominant (real test images) | thumbleweed (Rust) | 5.10 ms | — (baseline) |
-| ColorThief dominant (real test images) | fast-colorthief (C ext + NumPy) | 18.27 ms | **3.6×** faster |
+| ColorThief dominant (real test images) | thumbleweed (Rust) | 5.09 ms | — (baseline) |
+| ColorThief dominant (real test images) | fast-colorthief (C ext + NumPy) | 18.62 ms | **3.7×** faster |
 | ColorThief palette-10 (real test images) | thumbleweed (Rust) | 5.17 ms | — (baseline) |
-| ColorThief palette-10 (real test images) | fast-colorthief (C ext + NumPy) | 18.09 ms | **3.5×** faster |
+| ColorThief palette-10 (real test images) | fast-colorthief (C ext + NumPy) | 18.38 ms | **3.6×** faster |
 
 <!-- BENCHMARK_TABLE:END -->
 

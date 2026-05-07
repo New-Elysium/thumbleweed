@@ -30,18 +30,16 @@ classifiers     = [
 dependencies = []
 
 [project.optional-dependencies]
-pillow = ["Pillow>10"]
+pillow = [
+    "Pillow>=12; python_version >= '3.14'",
+    "Pillow>10; python_version < '3.14'"
+]
 dev    = [
-  "Pillow>10",
+  "Pillow>=12; python_version >= '3.14'",
+  "Pillow>10; python_version < '3.14'",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",
-]
-bench = [
-  "blurhash-python>=1.2.2",
-  "thumbhash-python>=1.0.1",
-  "fast-colorthief>=0.0.5",
-  "numpy>=2",
 ]
 
 [project.urls]
@@ -83,14 +81,15 @@ default-groups = ["dev"]
 
 [dependency-groups]
 dev = [
-  "Pillow>10",
+  "Pillow>=12; python_version >= '3.14'",
+  "Pillow>10; python_version < '3.14'",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",
 ]
 bench = [
-  "blurhash-python>=1.2.2",
-  "thumbhash-python>=1.0.1",
-  "fast-colorthief>=0.0.5",
-  "numpy>=2",
+  "blurhash-python>=1.2.2; python_version < '3.14'",
+  "thumbhash-python>=1.0.1; python_version < '3.14'",
+  "fast-colorthief>=0.0.5; python_version < '3.14'",
+  "numpy>=2; python_version < '3.14'",
 ]
