@@ -107,7 +107,7 @@ def _fixture_data() -> dict:
                 "w": fitted.size[0],
                 "h": fitted.size[1],
                 "rgba": fitted.tobytes(),
-                "pil": fitted.copy(),
+                "pil": fitted,
             }
         )
         blurhash_images.append(
@@ -116,7 +116,7 @@ def _fixture_data() -> dict:
                 "w": fitted.size[0],
                 "h": fitted.size[1],
                 "rgba": fitted.tobytes(),
-                "pil": fitted.copy(),
+                "pil": fitted,
             }
         )
         colorthief_bytes.append(
