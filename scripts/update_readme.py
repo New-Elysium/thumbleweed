@@ -29,6 +29,7 @@ def run_bench() -> str:
         check=True,
         capture_output=True,
         text=True,
+        timeout=300,
     )
     out = proc.stdout
     start = out.find(START)

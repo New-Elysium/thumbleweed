@@ -80,7 +80,7 @@ IMAGE_PATHS = [
 
 def _load_image(path: Path) -> Image.Image:
     with Image.open(path) as img:
-        return img.convert("RGBA")
+        return img.convert("RGBA").copy()
 
 
 def _fit_thumbhash_image(img: Image.Image) -> Image.Image:
@@ -449,7 +449,7 @@ def render_markdown_table(all_rows: list[dict], rounds: int, iters: int) -> str:
     for op, op_rows in ops.items():
         ours = next((r for r in op_rows if r["lib"].startswith("thumbleweed")), None)
         if ours is None:
-            continue
+            raise RuntimeError(f"missing thumbleweed benchmark result for {op!r}")
 
         competitors = [r for r in op_rows if not r["lib"].startswith("thumbleweed")]
         if not competitors:
