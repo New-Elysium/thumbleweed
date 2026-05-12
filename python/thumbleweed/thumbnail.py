@@ -12,10 +12,10 @@ Two backends ship in the wheel:
   placeholder when no embedded image can be found.
 * **auto-thumbnail** — uses the
   `auto-thumbnail <https://crates.io/crates/auto-thumbnail>`_ crate.
-  Always available for images. PDF and video support require the wheel
-  to have been built with the ``thumbnail-pdf`` or ``thumbnail-video``
-  cargo features (which pull in ``pdfium-render`` and ``ffmpeg``/``video-rs``
-  respectively).
+  This backend is optional and requires the wheel to have been built
+  with the ``auto-thumbnail`` cargo feature, which currently pulls in
+  both ``pdfium-render`` and ``ffmpeg``/``video-rs`` as an all-or-nothing
+  dependency set.
 
 Quick-start
 -----------

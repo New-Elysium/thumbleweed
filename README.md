@@ -66,6 +66,10 @@ Without these features the **crude** thumbnail engine is still available
 gradient placeholder) and the `compress` module degrades to a safe
 pass-through.
 
+Note that `auto-thumbnail` is currently an all-or-nothing upstream feature:
+enabling it pulls in both PDF and video support together rather than as
+separate cargo toggles.
+
 ## Development with uv
 
 ```bash

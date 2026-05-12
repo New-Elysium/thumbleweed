@@ -8,11 +8,11 @@
 //!   deterministic colour-gradient placeholder when no embedded image can be
 //!   found. Works without ffmpeg or pdfium.
 //!
-//! * **auto-thumbnail** (cargo feature `thumbnail`, on by default) — wraps the
-//!   [`auto-thumbnail`](https://crates.io/crates/auto-thumbnail) crate. The
-//!   `thumbnail-video` and `thumbnail-pdf` cargo features additionally pull in
-//!   ffmpeg (`video-rs`) and `pdfium-render` for high-quality video/PDF
-//!   rasterisation.
+//! * **auto-thumbnail** (cargo feature `auto-thumbnail`) — wraps the
+//!   [`auto-thumbnail`](https://crates.io/crates/auto-thumbnail) crate.
+//!   Upstream currently exposes image/PDF/video support as an all-or-nothing
+//!   dependency set, so enabling this feature pulls in `pdfium-render` and
+//!   ffmpeg (`video-rs`) for high-quality PDF/video rasterisation.
 
 use std::path::Path;
 

@@ -55,5 +55,5 @@ opt-level     = 3
 strip         = true
 
 # ── Free-threaded Python 3.13+ (no GIL) ────────────────────────────────────
-# pyo3 0.23+ enables this automatically when building against a free-threaded
+# PyO3 handles this automatically when building against a free-threaded
 # interpreter; no extra feature flag needed.
