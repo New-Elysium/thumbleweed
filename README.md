@@ -24,7 +24,7 @@ Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). 
 - ✅ **Thumbnails** — real rasterised thumbnails for **images, videos (MP4), and PDFs**, with a pure-Rust crude fallback that needs **no ffmpeg, no pdfium**
 - ✅ **Compression** — optional pixo-powered JPEG/PNG re-encoder, auto-applied to thumbnail output (mozjpeg/oxipng-class quality, pure Rust)
 - ✅ Python 3.10 – 3.14 (including free-threaded `3.13t` / `3.14t`)
-- ✅ Pre-built wheels for **Windows** | **Ubuntu**  `x86`, `AMD64`, `ARM` and **macOS** `Intel` | `ARM`
+- ✅ Pre-built wheels for **Windows** | **Ubuntu**  `x86`, `AMD64`, `ARM64` and **macOS** `Intel Based` | `Apple Silicon`
 - ✅ Pillow > 11 integration (optional)
 - ✅ Typed (`py.typed` + `.pyi` stubs)
 - ✅ Pure-Rust core — no C extensions, no NumPy required
