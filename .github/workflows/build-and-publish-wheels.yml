@@ -40,10 +40,10 @@ jobs:
                       manylinux: auto
 
                     # ── macOS ──────────────────────────────────────────────────────────
-                    - os: macos-15-intel
+                    - os: macos-26-intel
                       platform: macos-x86_64
                       target: x86_64-apple-darwin
-                    - os: macos-latest
+                    - os: macos-26
                       platform: macos-aarch64
                       target: aarch64-apple-darwin
                       arch: arm64
@@ -57,12 +57,11 @@ jobs:
                       platform: windows-i686
                       target: i686-pc-windows-msvc
                       arch: x86
-                    # Windows ARM64 cross-build is currently disabled.
-                    # setup-python on x64 Windows runners does not provide matching ARM64
-                    # interpreter import libraries (e.g. python310.lib), which causes
-                    # link failures for PyO3/maturin when building extension modules.
-                    # Re-enable only when using native ARM64 runners or a validated
-                    # cross-compilation/interpreter-lib setup.
+                    # Native Windows ARM64 build (untested)
+                    - os: windows-11-arm
+                      platform: windows-aarch64
+                      target: aarch64-pc-windows-msvc
+                      arch: arm64
 
         runs-on: ${{ matrix.os }}
         steps:
