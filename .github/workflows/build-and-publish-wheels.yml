@@ -202,7 +202,7 @@ jobs:
               run: ls -lh dist/
     
             - name: Publish wheels to PyPI
-              uses: pypa/gh-action-pypi-publish@v1
+              uses: pypa/gh-action-pypi-publish@release/v1
     
     publish-sdist:
         name: Publish sdist to PyPI
@@ -221,4 +221,4 @@ jobs:
               run: ls -lh dist/
     
             - name: Publish sdist to PyPI
-              uses: pypa/gh-action-pypi-publish@v1
+              uses: pypa/gh-action-pypi-publish@release/v1
