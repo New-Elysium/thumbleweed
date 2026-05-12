@@ -221,7 +221,7 @@ class TestThumbnailAutoCompress:
     def test_pixo_shrinks_at_least_some_jpegs(self):
         # Pixo can't always beat already-optimised JPEGs (e.g. OPS.jpg ships
         # with mozjpeg-class quantization tables). The contract is therefore
-        # “should shrink at least one of the fixtures” — sufficient evidence
+        # "should shrink at least one of the fixtures" — sufficient evidence
         # that pixo is wired in and re-encoding, while tolerating the
         # genuinely-incompressible cases.
         wins = 0
@@ -237,6 +237,41 @@ class TestThumbnailAutoCompress:
                 wins += 1
         assert wins >= 1, (
             "pixo did not shrink any JPEG fixture — the integration looks broken"
+        )
+
+    @pytest.mark.skipif(
+        not compress.is_available(),
+        reason="requires the `pixo` cargo feature",
+    )
+    @pytest.mark.parametrize(
+        "path",
+        [
+            pytest.param(
+                p,
+                marks=pytest.mark.xfail(
+                    reason="OPS.jpg is already mozjpeg-optimised; pixo cannot shrink it further",
+                    strict=False,
+                ),
+                id=p.name,
+            )
+            if p.name == "OPS.jpg"
+            else pytest.param(p, id=p.name)
+            for p in JPEG_FIXTURES
+        ],
+    )
+    def test_pixo_shrinks_each_jpeg_individually(self, path: pathlib.Path):
+        """Per-fixture proof that pixo re-encodes each JPEG smaller than the
+        image crate alone. OPS.jpg is marked xfail because it ships with
+        mozjpeg-class quantisation tables that pixo cannot beat."""
+        raw = thumbnail.create(
+            path, width=256, height=256, format="jpeg", compress=False
+        )
+        cooked = thumbnail.create(
+            path, width=256, height=256, format="jpeg", compress=True
+        )
+        assert len(cooked) <= len(raw)
+        assert len(cooked) < len(raw), (
+            f"pixo did not shrink {path.name}: raw={len(raw)} cooked={len(cooked)}"
         )
 
     @pytest.mark.skipif(
