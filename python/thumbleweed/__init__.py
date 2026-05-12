@@ -51,22 +51,44 @@ __all__ = [
     # ColorThief — high-level helpers (BytesIO / bytes / path / Pillow)
     "colorthief_get_color",
     "colorthief_get_palette",
+    # Thumbnail submodule + helpers
+    "thumbnail",
+    "thumbnail_create",
+    "thumbnail_save",
+    "thumbnail_detect_kind",
+    "thumbnail_available_backends",
+    # Compression (pixo) submodule + helpers
+    "compress",
+    "compress_image",
+    "compress_is_available",
+    "compress_detect_format",
     # Metadata
     "__version__",
 ]
 
 # ── Rust core (always available) ─────────────────────────────────────────────
+# Eagerly expose the thumbnail submodule (no shim package, just a submodule
+# that does its own thin wrapping over _core).
+from thumbleweed import compress as compress  # noqa: PLC0414
+from thumbleweed import thumbnail as thumbnail  # noqa: PLC0414
 from thumbleweed._core import (  # type: ignore[import]
     __version__,
     blurhash_decode,
     blurhash_encode,
     colorthief_get_color_bytes,
     colorthief_get_palette_bytes,
+    compress_detect_format,
+    compress_image,
+    compress_is_available,
     thumbhash_approximate_aspect_ratio,
     thumbhash_average_rgba,
     thumbhash_decode,
     thumbhash_encode,
+    thumbnail_available_backends,
+    thumbnail_detect_kind,
 )
+from thumbleweed.thumbnail import create as thumbnail_create
+from thumbleweed.thumbnail import save as thumbnail_save
 
 # ── Image-aware helpers — lazily imported to avoid circular imports ───────────
 # The shim packages (thumbhash, blurhash, colorthief) themselves import from

@@ -7,15 +7,17 @@
 
 ## 1. Project overview
 
-**thumbleweed** is a unified Python image-hashing library backed by a Rust core via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/).
+**thumbleweed** is a unified Python image-hashing, thumbnailing, and compression library backed by a Rust core via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/).
 
-It ships **three algorithms** under one wheel, with zero mandatory Python dependencies:
+It ships **five** subsystems under one wheel, with zero mandatory Python dependencies:
 
-| Algorithm | What it does | Drop-in replacement for |
-|-----------|-------------|------------------------|
-| **ThumbHash** | Compact, high-fidelity image placeholder hash (supports alpha) | `thumbhash-python`, `fast-thumbhash` |
-| **BlurHash** | Smooth gradient placeholder string | `blurhash-python` |
-| **ColorThief** | Dominant colour + palette extraction from any image format | `colorthief`, `fast-colorthief` |
+| Subsystem | What it does | Drop-in replacement for | Cargo feature |
+|-----------|-------------|------------------------|---------------|
+| **ThumbHash** | Compact, high-fidelity image placeholder hash (supports alpha) | `thumbhash-python`, `fast-thumbhash` | always on |
+| **BlurHash** | Smooth gradient placeholder string | `blurhash-python` | always on |
+| **ColorThief** | Dominant colour + palette extraction from any image format | `colorthief`, `fast-colorthief` | always on |
+| **Thumbnail** | Real rasterised thumbnails for images, videos (MP4), and PDFs | (no direct equivalent) | always on (crude) + opt-in `auto-thumbnail` |
+| **Compress** | mozjpeg/oxipng-class JPEG & PNG re-encoding via [`pixo`](https://crates.io/crates/pixo); auto-applied to thumbnail output | (no direct equivalent) | opt-in `pixo` |
 
 **Key properties:**
 - Pure-Rust algorithms — no C extensions, no NumPy, no OpenCV
@@ -34,11 +36,15 @@ thumbleweed/
 │   ├── lib.rs                  # PyO3 module — all Python bindings, registers functions
 │   ├── thumbhash.rs            # Pure Rust ThumbHash encode / decode
 │   ├── blurhash.rs             # Pure Rust BlurHash encode / decode (base-83)
-│   └── colorthief.rs           # ColorThief: wraps the `color-thief` crate
+│   ├── colorthief.rs           # ColorThief: wraps the `color-thief` crate
+│   ├── thumbnail.rs            # Image/video/PDF thumbnails (crude + auto-thumbnail backends)
+│   └── compress.rs             # Optional pixo-powered JPEG/PNG re-encoder
 ├── python/                     # Python source (maturin python-source)
 │   ├── thumbleweed/
 │   │   ├── __init__.py         # Unified top-level package; lazy re-exports image helpers
 │   │   ├── _core.pyi           # Type stubs for the compiled Rust extension
+│   │   ├── thumbnail.py        # High-level thumbnail submodule (input normalisation)
+│   │   ├── compress.py         # High-level compression submodule
 │   │   └── py.typed            # PEP 561 marker
 │   ├── thumbhash/
 │   │   └── __init__.py         # Backward-compatible shim; encode_image / decode_image helpers
@@ -50,9 +56,13 @@ thumbleweed/
 │   ├── test_thumbhash.py       # 70+ ThumbHash tests (raw bytes, Pillow, BytesIO, edge cases)
 │   ├── test_blurhash.py        # 28+ BlurHash tests
 │   ├── test_colorthief.py      # 30+ ColorThief tests including BytesIO / PIL.Image variants
+│   ├── test_thumbnail.py       # 153 tests — every jpg/mp4/pdf fixture × every engine × every format
+│   ├── test_compress.py        # 60+ compression + auto-compress integration tests
 │   ├── test_imports.py         # Import consistency & version-parity checks
 │   ├── bench_comparison.py     # Head-to-head performance benchmark; output is injected into README.md
-│   └── *.jpg                   # Real JPEG test fixtures (one.jpg, two.jpg, four.jpg, OPS.jpg)
+│   ├── *.jpg                   # Real JPEG test fixtures (one.jpg, two.jpg, four.jpg, OPS.jpg)
+│   ├── *.mp4                   # Real MP4 fixtures (1.mp4 … 4.mp4)
+│   └── *.pdf                   # Real PDF fixtures (blake3.pdf, proxy_5.pdf)
 ├── scripts/
 │   ├── update_readme.py         # Runs benchmark and refreshes README.md benchmark block
 │   └── build_all.sh             # Local wheel build helper for supported interpreters
@@ -104,13 +114,28 @@ Raw pixel-level APIs (`thumbhash_encode`, `blurhash_encode`) accept `bytes`, `by
 ## 4. Dependencies
 
 ### Rust (`Cargo.toml`)
-| Crate | Purpose |
-|-------|---------|
-| `pyo3 ^0.28.3` | Python ↔ Rust bindings |
-| `thiserror 2` | Ergonomic error types |
-| `image 0.25` | Decode PNG/JPEG/WebP/GIF/BMP from bytes / file |
-| `color-thief 0.2` | Median-cut palette extraction |
-| `itertools 0.13` | `.unique()` deduplication of palette entries |
+| Crate | Purpose | Always-on? |
+|-------|---------|------------|
+| `pyo3 ^0.28.3` | Python ↔ Rust bindings | yes |
+| `thiserror 2` | Ergonomic error types | yes |
+| `image 0.25` | Decode PNG/JPEG/WebP/GIF/BMP from bytes / file | yes |
+| `color-thief 0.2` | Median-cut palette extraction | yes |
+| `itertools 0.14` | `.unique()` deduplication of palette entries | yes |
+| `auto-thumbnail 0.1` | High-fidelity thumbnail backend (PDF via pdfium-render, video via ffmpeg/video-rs) | opt-in via `auto-thumbnail` cargo feature |
+| `tempfile 3` | Temp files for the auto-thumbnail backend (it operates on file paths) | opt-in via `auto-thumbnail` cargo feature |
+| `pixo 0.4` | Pure-Rust mozjpeg/oxipng-class JPEG & PNG re-encoder | opt-in via `pixo` cargo feature |
+
+### Cargo features
+
+| Feature | Pulls in | Effect |
+|---------|----------|--------|
+| (default) | nothing extra | Crude thumbnail engine + no-op `compress` module |
+| `pixo` | `pixo` (pure Rust, with `simd` + `parallel` enabled) | Real JPEG/PNG compression; auto-applied to thumbnail output |
+| `auto-thumbnail` | `auto-thumbnail` + its full default features (image+pdf+video) and therefore `pdfium-render` + `ffmpeg`/`video-rs` | High-quality `auto-thumbnail` engine. **Heavy** — only build wheels with this when you actually need ffmpeg/pdfium. |
+
+> The `auto-thumbnail` crate (0.1.2) unconditionally declares `mod pdf;` and
+> `mod video;` in its crate root, so we cannot enable just one of its
+> sub-features. As a result the `auto-thumbnail` cargo feature is all-or-nothing.
 
 ### Python (runtime)
 - **None** — zero mandatory runtime dependencies
@@ -159,6 +184,54 @@ pytest >=9
 
 **ColorThief quality parameter:** must be in `[1, 10]` (1 = best/slowest, 10 = fastest). Values outside this range raise `ValueError`.
 
+### 5.4 `thumbleweed.thumbnail`
+
+| Function | Input | Output | Notes |
+|----------|-------|--------|-------|
+| `create(source, width, height, quality, format, engine, compress)` | Any (see §3.3) plus MP4 / PDF | `bytes` | `format` ∈ `{jpeg, png, webp}`; `engine` ∈ `{auto, crude, auto-thumbnail}`; `compress=True` auto-runs pixo when available |
+| `create_from_bytes(data, ...)` | encoded bytes | `bytes` | Skips the Python input-normalisation step |
+| `create_from_path(path, ...)` | file path | `bytes` | Direct path-to-Rust fast path |
+| `save(source, output_path, ...)` | Any | — | Format inferred from `output_path` extension if not specified |
+| `detect_kind(source)` | Any | `"image"` / `"video"` / `"pdf"` / `"unknown"` | Magic-byte sniffing only |
+| `available_backends()` | — | `list[str]` | `["crude"]` or `["crude", "auto-thumbnail"]` |
+
+**Engines:**
+
+* `crude` (always available): pure-Rust pipeline. Resizes images via the
+  `image` crate; for videos scrapes the iTunes-style `covr` cover-art atom
+  (`moov/udta/meta/ilst/covr/data`); for PDFs scrapes the first JPEG
+  (`/DCTDecode`) image XObject stream; otherwise generates a deterministic
+  colour-gradient placeholder so callers always get *something* back.
+* `auto-thumbnail` (cargo feature): wraps the
+  [auto-thumbnail](https://crates.io/crates/auto-thumbnail) crate. Writes
+  the input to a tempfile (the crate operates on paths only), runs its
+  pipeline, reads the output back. Uses pdfium for real PDF rendering and
+  ffmpeg for real video frame extraction.
+
+`engine="auto"` (the default) tries auto-thumbnail first when present and
+falls back to crude on any error.
+
+### 5.5 `thumbleweed.compress`
+
+| Function | Input | Output | Notes |
+|----------|-------|--------|-------|
+| `compress(source, format, quality)` | Any (see §3.3) | `bytes` | Returns the smaller of (pixo output, original input). No-op pass-through for WebP / unknown / when the `pixo` cargo feature is off. |
+| `compress_path(input, output=None, ...)` | file paths | `int` | In-place when `output is None`; returns bytes saved |
+| `is_available()` | — | `bool` | `True` iff the wheel was built with `--features pixo` |
+| `detect_format(source)` | Any | `"jpeg"` / `"png"` / `"webp"` / `"unknown"` | Magic-byte sniffing |
+
+**Pipeline:** decode the input via the `image` crate → hand the raw
+RGB/RGBA buffer to pixo's `JpegOptions::max(...)` or
+`PngOptions::max(...)` preset → keep the pixo output only if it is
+*strictly smaller* than the input. The strict size guard means callers
+never get a worse result by enabling compression.
+
+**Auto-compress integration:** `thumbnail.create(...)` (and friends)
+default to `compress=True`. When the `pixo` cargo feature is compiled in
+this runs the JPEG/PNG output through the compress pipeline before
+returning; for WebP outputs the flag is a no-op. With the feature off
+the call is also a no-op so `compress=True` is always safe to leave on.
+
 ---
 
 ## 6. Development workflow
@@ -167,8 +240,10 @@ pytest >=9
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install "maturin>=1.10,<2" "Pillow>12" pytest
-maturin develop          # debug build
-maturin develop --release  # optimised build
+maturin develop                       # debug build, default features (no pixo, no auto-thumbnail)
+maturin develop --release             # optimised build, default features
+maturin develop --release --features pixo            # + JPEG/PNG compression
+maturin develop --release --features pixo,auto-thumbnail  # + ffmpeg/pdfium thumbnail backend
 ```
 
 ### Test
@@ -252,6 +327,9 @@ Follow-up considerations:
 | ColorThief quality range | The upstream `color-thief` Rust crate hard-asserts `1 ≤ quality ≤ 10`. thumbleweed validates this and raises `ValueError` before calling the crate. |
 | Circular import | `thumbleweed/__init__.py` uses `__getattr__` for lazy imports of the shim helpers to avoid: `thumbleweed` → `blurhash` → `thumbleweed._core` (partially initialised) → `thumbleweed`. |
 | `image` crate always converts to RGBA8 | For ColorThief, any input image (RGB, JPEG, etc.) is converted to RGBA8 before palette extraction. This is slightly wasteful for opaque images but simplifies the code and is fast. |
+| `auto-thumbnail` 0.1.2 partial-feature bug | The crate's `mod.rs` declares `pub(crate) mod pdf;` and `pub(crate) mod video;` unconditionally. Building it with only the `image` feature fails to compile. We therefore enable `auto-thumbnail` strictly all-or-nothing. |
+| pixo handles only JPEG and PNG | WebP outputs and unrecognised inputs are passed through unchanged by `compress::compress_encoded`. The `compress=True` flag on thumbnail helpers is a no-op for WebP. |
+| Already-optimised JPEGs | When the source JPEG already uses mozjpeg-class quantisation tables (e.g. `OPS.jpg` in tests), pixo can't shrink it further. The compress pipeline detects this and returns the original bytes verbatim — so the output is *never* larger than the input. |
 
 ---
 

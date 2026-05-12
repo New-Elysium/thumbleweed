@@ -125,6 +125,12 @@ pub fn get_palette_from_bytes(
 }
 
 /// Extract a palette from a file path.
+//
+// NOTE: kept as part of the internal Rust API surface even though no PyO3
+// binding currently uses it (the Python helpers always pre-read the file in
+// pure Python). Marked `allow(dead_code)` to suppress the warning without
+// dropping the symbol.
+#[allow(dead_code)]
 pub fn get_palette_from_path(
     path: &Path,
     color_count: Option<u8>,
@@ -144,6 +150,12 @@ pub fn get_dominant_from_bytes(
 }
 
 /// Extract the dominant colour from a file path.
+//
+// NOTE: kept for symmetry with `get_palette_from_path` and as part of the
+// internal Rust API surface, even though no PyO3 binding currently calls it
+// directly (the Python helpers always pre-read the file in pure Python).
+// Marked `allow(dead_code)` to suppress the warning without losing the symbol.
+#[allow(dead_code)]
 pub fn get_dominant_from_path(
     path: &Path,
     quality: Option<u8>,

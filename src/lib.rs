@@ -5,7 +5,11 @@
 
 mod blurhash;
 mod colorthief;
+mod compress;
 mod thumbhash;
+mod thumbnail;
+
+use std::path::PathBuf;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -237,6 +241,319 @@ fn colorthief_get_palette_bytes(
         .map_err(PyErr::from)
 }
 
+// ── Thumbnail Python bindings ───────────────────────────────────────────────
+
+fn run_thumbnail(
+    bytes: Option<&[u8]>,
+    path: Option<PathBuf>,
+    width: u32,
+    height: u32,
+    quality: u8,
+    format: thumbnail::OutputFormat,
+    engine: &str,
+    compress: bool,
+) -> Result<Vec<u8>, thumbnail::ThumbnailError> {
+    let raw = run_thumbnail_inner(bytes, path, width, height, quality, format, engine)?;
+    if !compress {
+        return Ok(raw);
+    }
+    // Apply the pixo re-encoder when we asked for a format pixo understands.
+    // `compress::compress_encoded` is a safe no-op pass-through when either
+    // (a) the `pixo` cargo feature isn't compiled in, or (b) the bytes don't
+    // begin with a JPEG/PNG magic header. So this call is always safe.
+    let cf = match format {
+        thumbnail::OutputFormat::Jpeg => compress::CompressFormat::Jpeg,
+        thumbnail::OutputFormat::Png => compress::CompressFormat::Png,
+        // pixo cannot re-encode WebP — just skip the step.
+        thumbnail::OutputFormat::Webp => return Ok(raw),
+    };
+    match compress::compress_encoded(&raw, cf, quality) {
+        Ok(out) => Ok(out),
+        // If pixo trips for any reason, fall back to the original bytes
+        // — we never want compression to break thumbnail generation.
+        Err(_) => Ok(raw),
+    }
+}
+
+fn run_thumbnail_inner(
+    bytes: Option<&[u8]>,
+    path: Option<PathBuf>,
+    width: u32,
+    height: u32,
+    quality: u8,
+    format: thumbnail::OutputFormat,
+    engine: &str,
+) -> Result<Vec<u8>, thumbnail::ThumbnailError> {
+    match engine {
+        "crude" => match (bytes, path) {
+            (Some(b), _) => {
+                thumbnail::crude_thumbnail_from_bytes(b, width, height, quality, format)
+            }
+            (None, Some(p)) => {
+                thumbnail::crude_thumbnail_from_path(&p, width, height, quality, format)
+            }
+            (None, None) => Err(thumbnail::ThumbnailError::InvalidArgs(
+                "either bytes or path must be supplied".to_string(),
+            )),
+        },
+        "auto-thumbnail" | "auto_thumbnail" => {
+            #[cfg(feature = "auto-thumbnail")]
+            {
+                match (bytes, path) {
+                    (Some(b), _) => thumbnail::auto_backend::create_from_bytes(
+                        b, width, height, quality, format,
+                    ),
+                    (None, Some(p)) => thumbnail::auto_backend::create_from_path(
+                        &p, width, height, quality, format,
+                    ),
+                    (None, None) => Err(thumbnail::ThumbnailError::InvalidArgs(
+                        "either bytes or path must be supplied".to_string(),
+                    )),
+                }
+            }
+            #[cfg(not(feature = "auto-thumbnail"))]
+            {
+                let _ = (bytes, path, width, height, quality, format);
+                Err(thumbnail::ThumbnailError::BackendUnavailable(
+                    "thumbleweed was built without the `auto-thumbnail` cargo feature".to_string(),
+                ))
+            }
+        }
+        "auto" => {
+            #[cfg(feature = "auto-thumbnail")]
+            {
+                let auto_result = match (bytes, path.clone()) {
+                    (Some(b), _) => thumbnail::auto_backend::create_from_bytes(
+                        b, width, height, quality, format,
+                    ),
+                    (None, Some(p)) => thumbnail::auto_backend::create_from_path(
+                        &p, width, height, quality, format,
+                    ),
+                    (None, None) => Err(thumbnail::ThumbnailError::InvalidArgs(
+                        "either bytes or path must be supplied".to_string(),
+                    )),
+                };
+                match auto_result {
+                    Ok(b) => Ok(b),
+                    Err(_) => match (bytes, path) {
+                        (Some(b), _) => {
+                            thumbnail::crude_thumbnail_from_bytes(b, width, height, quality, format)
+                        }
+                        (None, Some(p)) => {
+                            thumbnail::crude_thumbnail_from_path(&p, width, height, quality, format)
+                        }
+                        (None, None) => Err(thumbnail::ThumbnailError::InvalidArgs(
+                            "either bytes or path must be supplied".to_string(),
+                        )),
+                    },
+                }
+            }
+            #[cfg(not(feature = "auto-thumbnail"))]
+            {
+                match (bytes, path) {
+                    (Some(b), _) => {
+                        thumbnail::crude_thumbnail_from_bytes(b, width, height, quality, format)
+                    }
+                    (None, Some(p)) => {
+                        thumbnail::crude_thumbnail_from_path(&p, width, height, quality, format)
+                    }
+                    (None, None) => Err(thumbnail::ThumbnailError::InvalidArgs(
+                        "either bytes or path must be supplied".to_string(),
+                    )),
+                }
+            }
+        }
+        other => Err(thumbnail::ThumbnailError::InvalidArgs(format!(
+            "unknown engine {other:?} (expected auto | crude | auto-thumbnail)"
+        ))),
+    }
+}
+
+/// Create a thumbnail from raw image / video / PDF bytes.
+///
+/// Parameters
+/// ----------
+/// data : bytes | bytearray
+///     Raw bytes of the source file. The format is auto-detected from the
+///     leading magic bytes (JPEG, PNG, WebP, GIF, BMP, MP4/MOV, MKV/WebM, PDF).
+/// width, height : int, optional
+///     Maximum thumbnail dimensions (default 256x256). Aspect ratio is preserved.
+/// quality : int, optional
+///     Quality (1–100, default 85) for JPEG and lossy WebP. Ignored for PNG.
+/// format : str, optional
+///     Output format: ``"jpeg"`` (default), ``"png"``, or ``"webp"``.
+/// engine : str, optional
+///     ``"auto"`` (default), ``"crude"``, or ``"auto-thumbnail"``. ``auto``
+///     prefers the auto-thumbnail backend (when compiled in) and falls back
+///     to the pure-Rust crude pipeline on any error.
+///
+/// Returns
+/// -------
+/// bytes
+///     Encoded thumbnail bytes in the requested ``format``.
+#[pyfunction]
+#[pyo3(signature = (data, width=256, height=256, quality=85, format="jpeg", engine="auto", compress=true))]
+fn thumbnail_create_from_bytes<'py>(
+    py: Python<'py>,
+    data: Vec<u8>,
+    width: u32,
+    height: u32,
+    quality: u8,
+    format: &str,
+    engine: &str,
+    compress: bool,
+) -> PyResult<Bound<'py, PyBytes>> {
+    let fmt = thumbnail::OutputFormat::from_str_ci(format)?;
+    let engine_owned = engine.to_string();
+    let bytes = py.detach(|| {
+        run_thumbnail(
+            Some(&data),
+            None,
+            width,
+            height,
+            quality,
+            fmt,
+            &engine_owned,
+            compress,
+        )
+    })?;
+    Ok(PyBytes::new(py, &bytes))
+}
+
+/// Create a thumbnail from a file path.
+#[pyfunction]
+#[pyo3(signature = (path, width=256, height=256, quality=85, format="jpeg", engine="auto", compress=true))]
+fn thumbnail_create_from_path<'py>(
+    py: Python<'py>,
+    path: PathBuf,
+    width: u32,
+    height: u32,
+    quality: u8,
+    format: &str,
+    engine: &str,
+    compress: bool,
+) -> PyResult<Bound<'py, PyBytes>> {
+    let fmt = thumbnail::OutputFormat::from_str_ci(format)?;
+    let engine_owned = engine.to_string();
+    let bytes = py.detach(|| {
+        run_thumbnail(
+            None,
+            Some(path),
+            width,
+            height,
+            quality,
+            fmt,
+            &engine_owned,
+            compress,
+        )
+    })?;
+    Ok(PyBytes::new(py, &bytes))
+}
+
+/// Create a thumbnail and write it to ``output_path``.
+#[pyfunction]
+#[pyo3(signature = (input_path, output_path, width=256, height=256, quality=85, format=None, engine="auto", compress=true))]
+fn thumbnail_save(
+    py: Python<'_>,
+    input_path: PathBuf,
+    output_path: PathBuf,
+    width: u32,
+    height: u32,
+    quality: u8,
+    format: Option<&str>,
+    engine: &str,
+    compress: bool,
+) -> PyResult<()> {
+    // Infer format from the output path extension when not specified.
+    let inferred = output_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("jpeg");
+    let fmt_str = format.unwrap_or(inferred);
+    let fmt = thumbnail::OutputFormat::from_str_ci(fmt_str)?;
+    let engine_owned = engine.to_string();
+    py.detach(|| -> Result<(), thumbnail::ThumbnailError> {
+        let bytes = run_thumbnail(
+            None,
+            Some(input_path),
+            width,
+            height,
+            quality,
+            fmt,
+            &engine_owned,
+            compress,
+        )?;
+        std::fs::write(&output_path, &bytes)?;
+        Ok(())
+    })?;
+    Ok(())
+}
+
+/// Detect the input kind from magic bytes. Returns one of
+/// ``"image"``, ``"video"``, ``"pdf"``, or ``"unknown"``.
+#[pyfunction]
+fn thumbnail_detect_kind(data: &[u8]) -> &'static str {
+    match thumbnail::detect_kind(data) {
+        thumbnail::InputKind::Image => "image",
+        thumbnail::InputKind::Video => "video",
+        thumbnail::InputKind::Pdf => "pdf",
+        thumbnail::InputKind::Unknown => "unknown",
+    }
+}
+
+/// Return the list of compiled-in thumbnail backends.
+#[pyfunction]
+fn thumbnail_available_backends() -> Vec<&'static str> {
+    thumbnail::available_backends()
+}
+
+// ── Compression (pixo) Python bindings ────────────────────────────────────────
+
+/// Re-encode an image using pixo's max-compression preset.
+///
+/// Parameters
+/// ----------
+/// data : bytes | bytearray
+///     Encoded image bytes (JPEG, PNG, or anything else — see ``format``).
+/// format : str, optional
+///     ``"auto"`` (default), ``"jpeg"``, or ``"png"``. ``"auto"`` infers the
+///     format from the input's magic bytes; non-JPEG/PNG inputs (WebP, GIF,
+///     unknown blobs) are returned verbatim.
+/// quality : int, optional
+///     1–100 (default 85). Only used when re-encoding JPEG.
+///
+/// Returns
+/// -------
+/// bytes
+///     Re-encoded bytes if pixo produced something smaller than the input,
+///     otherwise the input unchanged. If thumbleweed was built without the
+///     ``pixo`` cargo feature, this function is a no-op pass-through.
+#[pyfunction]
+#[pyo3(signature = (data, format="auto", quality=85))]
+fn compress_image<'py>(
+    py: Python<'py>,
+    data: Vec<u8>,
+    format: &str,
+    quality: u8,
+) -> PyResult<Bound<'py, PyBytes>> {
+    let fmt = compress::CompressFormat::from_str_ci(format)?;
+    let bytes = py.detach(|| compress::compress_encoded(&data, fmt, quality))?;
+    Ok(PyBytes::new(py, &bytes))
+}
+
+/// Returns ``True`` when the wheel was built with the ``pixo`` cargo feature.
+#[pyfunction]
+fn compress_is_available() -> bool {
+    compress::is_available()
+}
+
+/// Detect the encoded format of ``data``: ``"jpeg"``, ``"png"``, ``"webp"``,
+/// or ``"unknown"``.
+#[pyfunction]
+fn compress_detect_format(data: &[u8]) -> &'static str {
+    compress::detect_encoded(data)
+}
+
 // ── Module ───────────────────────────────────────────────────────────────────
 
 /// thumbleweed — unified image hashing library.
@@ -259,6 +576,18 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ColorThief
     m.add_function(wrap_pyfunction!(colorthief_get_color_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(colorthief_get_palette_bytes, m)?)?;
+
+    // Thumbnail
+    m.add_function(wrap_pyfunction!(thumbnail_create_from_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(thumbnail_create_from_path, m)?)?;
+    m.add_function(wrap_pyfunction!(thumbnail_save, m)?)?;
+    m.add_function(wrap_pyfunction!(thumbnail_detect_kind, m)?)?;
+    m.add_function(wrap_pyfunction!(thumbnail_available_backends, m)?)?;
+
+    // Compression (pixo)
+    m.add_function(wrap_pyfunction!(compress_image, m)?)?;
+    m.add_function(wrap_pyfunction!(compress_is_available, m)?)?;
+    m.add_function(wrap_pyfunction!(compress_detect_format, m)?)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())

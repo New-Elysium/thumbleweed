@@ -1,6 +1,6 @@
 [package]
 name = "thumbleweed"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2024"
 description = "Unified image hashing — ThumbHash, BlurHash, and more"
 license = "MIT"
@@ -18,7 +18,35 @@ thiserror = "2"
 # ColorThief support: load images and extract palettes
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
 color-thief = "0.2"
-itertools = "0.13"
+itertools = "0.14"
+
+# ── Thumbnail support ────────────────────────────────────────────────
+# `auto-thumbnail` 0.1.2's crate root unconditionally declares `mod pdf;` and
+# `mod video;`, so we cannot compile it with only a subset of its features.
+# It is therefore strictly opt-in via the `auto-thumbnail` cargo feature —
+# enabling it pulls in `pdfium-render` (PDF) and `ffmpeg` via `video-rs`
+# (video). The crude pipeline (`crude` engine) is always available without
+# any of these heavy native deps.
+auto-thumbnail = { version = "0.1", optional = true }
+tempfile = { version = "3", optional = true }
+
+# ── Image compression (pixo) ─────────────────────────────────────────────
+# Pure-Rust JPEG and PNG re-encoder with mozjpeg/oxipng-class compression.
+# Optional — enable via the `pixo` cargo feature. We turn on every
+# compression-relevant pixo feature (`simd` + `parallel`); `wasm` and `cli`
+# are intentionally NOT forwarded since they are platform/CLI integrations,
+# not compression knobs.
+pixo = { version = "0.4", optional = true, default-features = false, features = ["simd", "parallel"] }
+
+[features]
+default = []
+# Opt-in: full auto-thumbnail backend (image + PDF via pdfium + video via ffmpeg).
+# This is the heavy wheel — produce it only when you actually need ffmpeg/pdfium.
+auto-thumbnail = ["dep:auto-thumbnail", "dep:tempfile"]
+# Opt-in: pixo-powered image compression (PNG/JPEG re-encoding). Enabling
+# this also makes `thumbnail.create(..., compress=True)` shrink the thumbnail
+# automatically before returning.
+pixo = ["dep:pixo"]
 
 [profile.release]
 lto           = true

@@ -5,7 +5,7 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.1.9"
+version         = "0.2.0"
 description     = "Unified image hashing & Color extraction — ThumbHash, BlurHash, and ColorThief -- 3-in-1"
 readme          = "README.md"
 license         = { text = "MIT" }
@@ -35,6 +35,14 @@ pillow = [
     "Pillow>=12; python_version >= '3.14'",
     "Pillow>10; python_version < '3.14'"
 ]
+# These extras are intentionally empty in terms of Python deps — they exist
+# as a documentation hook so users can write e.g. `pip install thumbleweed[pixo]`
+# to signal intent. The actual machinery is enabled at *wheel build* time via
+# the corresponding Cargo feature: build with
+#     MATURIN_PEP517_ARGS="--features pixo" pip install thumbleweed --no-binary thumbleweed
+# (or use a CI-published wheel built with the feature).
+pixo = []
+thumbnail-full = []
 # Don't change
 dev    = [
   "Pillow>=12; python_version >= '3.14'",
