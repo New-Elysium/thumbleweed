@@ -210,8 +210,6 @@ thumbleweed/
 
 ---
 
-## Performance benchmarks
-
 <!-- BENCHMARK_TABLE:START -->
 ## Performance Benchmark Results
 
@@ -223,12 +221,14 @@ thumbleweed/
 |-----------|-------------|------------|--------|
 | ThumbHash encode (real test images) | 825.4 µs | thumbhash-python (pure Python): 27.26 ms | **33.0×** faster |
 | ThumbHash decode (real test images) | 56.4 µs | thumbhash-python (pure Python): 5.49 ms | **97.3×** faster |
-| BlurHash encode (real test images) | 4.98 ms | blurhash-python (pure Python): 4.42 ms | 1.1× slower |
-| BlurHash decode 64×64 (real test images) | 902.4 µs | blurhash-python (pure Python): 842.2 µs | 1.1× slower |
+| BlurHash encode (real test images) | 4.98 ms | blurhash-python (CFFI): 4.42 ms | 1.1× slower |
+| BlurHash decode 64×64 (real test images) | 902.4 µs | blurhash-python (CFFI): 842.2 µs | 1.1× slower |
 | ColorThief dominant (real test images) | 5.09 ms | fast-colorthief (C ext + NumPy): 18.62 ms | **3.7×** faster |
 | ColorThief palette-10 (real test images) | 5.17 ms | fast-colorthief (C ext + NumPy): 18.38 ms | **3.6×** faster |
 
 <!-- BENCHMARK_TABLE:END -->
+
+(_The above values are updated by a benchmark script ocassionally_)
 
 **Notes on ColorThief timing:** thumbleweed includes image decode in its timing because it accepts raw encoded bytes from the real test fixtures, while `fast-colorthief` also reads from in-memory file-like objects in these benchmarks. This measures realistic end-to-end usage rather than just the inner palette routine.
 
