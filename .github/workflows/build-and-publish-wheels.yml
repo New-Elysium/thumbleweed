@@ -71,7 +71,7 @@ jobs:
               if: matrix.platform != 'windows-i686'
               with:
                   python-version: |
-                      3.10
+                      ${{ matrix.arch == 'arm64' && '' || '3.10' }}
                       3.11
                       3.12
                       3.13
@@ -196,13 +196,13 @@ jobs:
                   pattern: wheels-*
                   merge-multiple: true
                   path: dist
-    
+
             - name: List wheel distributions
               run: ls -lh dist/
-    
+
             - name: Publish wheels to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
-    
+
     publish-sdist:
         name: Publish sdist to PyPI
         needs: [sdist]
@@ -215,9 +215,9 @@ jobs:
               with:
                   name: sdist
                   path: dist
-    
+
             - name: List sdist
               run: ls -lh dist/
-    
+
             - name: Publish sdist to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
