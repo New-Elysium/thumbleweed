@@ -30,7 +30,8 @@ jobs:
                       platform: linux-i686
                       target: i686
                       manylinux: auto
-                    - os: ubuntu-latest
+                    # Native Linux ARM64 build
+                    - os: ubuntu-24.04-arm
                       platform: linux-aarch64
                       target: aarch64
                       manylinux: auto
@@ -57,7 +58,7 @@ jobs:
                       platform: windows-i686
                       target: i686-pc-windows-msvc
                       arch: x86
-                    # Native Windows ARM64 build (untested)
+                    # Native Windows ARM64 build
                     - os: windows-11-arm
                       platform: windows-aarch64
                       target: aarch64-pc-windows-msvc
@@ -104,10 +105,10 @@ jobs:
                   architecture: arm64
 
             - name: Set up QEMU
-              if: runner.os == 'Linux' && matrix.target != 'x86_64' && matrix.target != 'i686'
+              if: runner.os == 'Linux' && matrix.target != 'x86_64' && matrix.target != 'i686' && matrix.target != 'aarch64'
               uses: docker/setup-qemu-action@v3
               with:
-                  platforms: linux/${{ matrix.target == 'aarch64' && 'arm64' || matrix.target == 'armv7' && 'arm/v7' || matrix.target }}
+                  platforms: linux/${{ matrix.target == 'armv7' && 'arm/v7' || matrix.target }}
 
             - name: Build wheels
               uses: PyO3/maturin-action@v1
