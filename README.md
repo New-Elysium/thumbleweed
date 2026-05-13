@@ -1,4 +1,4 @@
-# thumbleweed
+# thumbleweed 🌵
 
 <p align="center">
 <a href="https://github.com/New-Elysium/thumbleweed/actions?query=workflow%3A%22Build+%26+Publish+Wheels%22+branch%3Amain" target="_blank">
