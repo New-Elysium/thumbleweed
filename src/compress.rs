@@ -189,7 +189,7 @@ pub fn compress_encoded(
         // Without the pixo feature, this function is a no-op so it remains
         // safe to call unconditionally from the thumbnail pipeline.
         let _ = (resolved, quality);
-        return Ok(bytes.to_vec());
+        Ok(bytes.to_vec())
     }
 
     #[cfg(feature = "pixo")]

@@ -243,6 +243,7 @@ fn colorthief_get_palette_bytes(
 
 // ── Thumbnail Python bindings ───────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn run_thumbnail(
     bytes: Option<&[u8]>,
     path: Option<PathBuf>,
@@ -392,6 +393,7 @@ fn run_thumbnail_inner(
 /// bytes
 ///     Encoded thumbnail bytes in the requested ``format``.
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (data, width=256, height=256, quality=85, format="jpeg", engine="auto", compress=true))]
 fn thumbnail_create_from_bytes<'py>(
     py: Python<'py>,
@@ -422,6 +424,7 @@ fn thumbnail_create_from_bytes<'py>(
 
 /// Create a thumbnail from a file path.
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (path, width=256, height=256, quality=85, format="jpeg", engine="auto", compress=true))]
 fn thumbnail_create_from_path<'py>(
     py: Python<'py>,
@@ -452,6 +455,7 @@ fn thumbnail_create_from_path<'py>(
 
 /// Create a thumbnail and write it to ``output_path``.
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (input_path, output_path, width=256, height=256, quality=85, format=None, engine="auto", compress=true))]
 fn thumbnail_save(
     py: Python<'_>,

@@ -61,7 +61,7 @@ pub fn rgba_to_thumb_hash(w: usize, h: usize, rgba: &[u8]) -> Result<Vec<u8>, Th
     let mut avg_g = 0.0f32;
     let mut avg_b = 0.0f32;
     let mut avg_a = 0.0f32;
-    for px in rgba.chunks_exact(4) {
+    for px in rgba.as_chunks::<4>().0 {
         let alpha = px[3] as f32 / 255.0;
         avg_r += alpha / 255.0 * px[0] as f32;
         avg_g += alpha / 255.0 * px[1] as f32;
@@ -85,7 +85,7 @@ pub fn rgba_to_thumb_hash(w: usize, h: usize, rgba: &[u8]) -> Result<Vec<u8>, Th
     let mut a_chan = Vec::with_capacity(w * h);
 
     // Convert RGBA -> LPQA (composite atop the average colour)
-    for px in rgba.chunks_exact(4) {
+    for px in rgba.as_chunks::<4>().0 {
         let alpha = px[3] as f32 / 255.0;
         let r = avg_r * (1.0 - alpha) + alpha / 255.0 * px[0] as f32;
         let g = avg_g * (1.0 - alpha) + alpha / 255.0 * px[1] as f32;
@@ -106,8 +106,8 @@ pub fn rgba_to_thumb_hash(w: usize, h: usize, rgba: &[u8]) -> Result<Vec<u8>, Th
             let mut cx = 0usize;
             while cx * ny < nx * (ny - cy) {
                 let mut f = 0.0f32;
-                for x in 0..w {
-                    fx[x] = (PI / w as f32 * cx as f32 * (x as f32 + 0.5)).cos();
+                for (x, coefficient) in fx.iter_mut().enumerate() {
+                    *coefficient = (PI / w as f32 * cx as f32 * (x as f32 + 0.5)).cos();
                 }
                 for y in 0..h {
                     let fy = (PI / h as f32 * cy as f32 * (y as f32 + 0.5)).cos();
@@ -281,18 +281,26 @@ pub fn thumb_hash_to_rgba(hash: &[u8]) -> Result<(usize, usize, Vec<u8>), ThumbH
             let mut a = a_dc;
 
             // Precompute DCT basis coefficients for this pixel
-            for cx in 0..lx.max(if has_alpha { 5 } else { 3 }) {
-                fx[cx] = (PI / w as f32 * (x as f32 + 0.5) * cx as f32).cos();
+            for (cx, coefficient) in
+                fx.iter_mut()
+                    .enumerate()
+                    .take(lx.max(if has_alpha { 5 } else { 3 }))
+            {
+                *coefficient = (PI / w as f32 * (x as f32 + 0.5) * cx as f32).cos();
             }
-            for cy in 0..ly.max(if has_alpha { 5 } else { 3 }) {
-                fy[cy] = (PI / h as f32 * (y as f32 + 0.5) * cy as f32).cos();
+            for (cy, coefficient) in
+                fy.iter_mut()
+                    .enumerate()
+                    .take(ly.max(if has_alpha { 5 } else { 3 }))
+            {
+                *coefficient = (PI / h as f32 * (y as f32 + 0.5) * cy as f32).cos();
             }
 
             // Decode L
             let mut j = 0;
-            for cy in 0..ly {
+            for (cy, fy_coefficient) in fy.iter().take(ly).enumerate() {
                 let mut cx = if cy > 0 { 0 } else { 1 };
-                let fy2 = fy[cy] * 2.0;
+                let fy2 = fy_coefficient * 2.0;
                 while cx * ly < lx * (ly - cy) {
                     l += l_ac[j] * fx[cx] * fy2;
                     j += 1;
@@ -302,9 +310,9 @@ pub fn thumb_hash_to_rgba(hash: &[u8]) -> Result<(usize, usize, Vec<u8>), ThumbH
 
             // Decode P and Q
             let mut j = 0;
-            for cy in 0..3 {
+            for (cy, fy_coefficient) in fy.iter().take(3).enumerate() {
                 let mut cx = if cy > 0 { 0 } else { 1 };
-                let fy2 = fy[cy] * 2.0;
+                let fy2 = fy_coefficient * 2.0;
                 while cx < 3 - cy {
                     let f = fx[cx] * fy2;
                     p += p_ac[j] * f;
@@ -317,9 +325,9 @@ pub fn thumb_hash_to_rgba(hash: &[u8]) -> Result<(usize, usize, Vec<u8>), ThumbH
             // Decode A
             if has_alpha {
                 let mut j = 0;
-                for cy in 0..5 {
+                for (cy, fy_coefficient) in fy.iter().take(5).enumerate() {
                     let mut cx = if cy > 0 { 0 } else { 1 };
-                    let fy2 = fy[cy] * 2.0;
+                    let fy2 = fy_coefficient * 2.0;
                     while cx < 5 - cy {
                         a += a_ac[j] * fx[cx] * fy2;
                         j += 1;
@@ -542,7 +550,7 @@ mod tests {
         let hash = rgba_to_thumb_hash(8, 8, &px).unwrap();
         let (_, _, rgba) = thumb_hash_to_rgba(&hash).unwrap();
         // Every pixel's alpha byte should be 255 for an opaque input
-        for chunk in rgba.chunks_exact(4) {
+        for chunk in rgba.as_chunks::<4>().0 {
             assert_eq!(chunk[3], 255);
         }
     }

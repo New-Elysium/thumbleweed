@@ -101,7 +101,7 @@ fn sign_pow(value: f64, exp: f64) -> f64 {
 }
 
 fn linear_to_srgb(value: f64) -> u8 {
-    let v = value.max(0.0).min(1.0);
+    let v = value.clamp(0.0, 1.0);
     let srgb = if v <= 0.0031308 {
         v * 12.92
     } else {
@@ -147,16 +147,13 @@ fn encode_dc(value: [f64; 3]) -> usize {
 fn encode_ac(value: [f64; 3], max_ac: f64) -> usize {
     let q_r = (sign_pow(value[0] / max_ac, 0.5) * 9.0 + 9.5)
         .round()
-        .max(0.0)
-        .min(18.0) as usize;
+        .clamp(0.0, 18.0) as usize;
     let q_g = (sign_pow(value[1] / max_ac, 0.5) * 9.0 + 9.5)
         .round()
-        .max(0.0)
-        .min(18.0) as usize;
+        .clamp(0.0, 18.0) as usize;
     let q_b = (sign_pow(value[2] / max_ac, 0.5) * 9.0 + 9.5)
         .round()
-        .max(0.0)
-        .min(18.0) as usize;
+        .clamp(0.0, 18.0) as usize;
     q_r * 19 * 19 + q_g * 19 + q_b
 }
 
@@ -280,7 +277,7 @@ pub fn encode(
     width: usize,
     height: usize,
 ) -> Result<String, BlurHashEncodeError> {
-    if cx < 1 || cx > 9 || cy < 1 || cy > 9 {
+    if !(1..=9).contains(&cx) || !(1..=9).contains(&cy) {
         return Err(BlurHashEncodeError::InvalidComponents { cx, cy });
     }
 
@@ -316,12 +313,12 @@ pub fn encode(
                 continue;
             }
             let factor = factors[y * cx + x];
-            for c in 0..3 {
-                max_ac = max_ac.max(factor[c].abs());
+            for component in factor {
+                max_ac = max_ac.max(component.abs());
             }
         }
     }
-    let quant_max = ((max_ac * 166.0) - 0.5).round().max(0.0).min(18.0) as usize;
+    let quant_max = ((max_ac * 166.0) - 0.5).round().clamp(0.0, 18.0) as usize;
     hash.push_str(&encode_base83(quant_max, 1));
 
     // DC component
@@ -384,7 +381,7 @@ mod tests {
         let width = 4;
         let height = 4;
         let mut pixels = vec![0u8; width * height * 4];
-        for pixel in pixels.chunks_exact_mut(4) {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
             pixel[0] = 255; // R
             pixel[1] = 0; // G
             pixel[2] = 0; // B
