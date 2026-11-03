@@ -1,5 +1,3 @@
-import { TumbleweedMark } from "./Nav";
-
 export default function Footer() {
   return (
     <footer className="wood-panel mt-10">
@@ -7,7 +5,8 @@ export default function Footer() {
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row">
           <div className="max-w-sm">
             <div className="flex items-center gap-2.5">
-              <TumbleweedMark className="size-9 text-accent" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/thumbleweed.svg" alt="" className="size-9" />
               <span className="font-display text-xl font-semibold">thumbleweed</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#efe3cc]/70">
@@ -56,6 +55,12 @@ export default function Footer() {
           © {new Date().getFullYear()} thumbleweed contributors · MIT Licence · tumbleweeds roll
           free
         </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/footer.svg"
+          alt="A tumbleweed rolling across the desert horizon"
+          className="mx-auto mt-8 h-auto w-full max-w-3xl rounded-box opacity-90"
+        />
       </div>
     </footer>
   );

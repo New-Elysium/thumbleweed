@@ -18,7 +18,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thumbleweed.org"),
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: "/thumbleweed.svg" },
   title: {
     default: "thumbleweed — image hashing, thumbnails & compression from Rust",
     template: "%s · thumbleweed",

@@ -34,6 +34,51 @@ export type WasmApi = {
   memory: WebAssembly.Memory;
 };
 
+// Raw symbol names exported by wasm-thumbleweed/src/lib.rs. Keep in sync with
+// that crate's `#[unsafe(no_mangle)] pub extern "C" fn tw_*` definitions.
+type RawExports = {
+  memory: WebAssembly.Memory;
+  tw_alloc: (len: number) => number;
+  tw_free: (ptr: number, len: number) => void;
+  tw_thumbhash_encode: WasmApi["thumbhashEncode"];
+  tw_thumbhash_decode: WasmApi["thumbhashDecode"];
+  tw_thumbhash_average: WasmApi["thumbhashAverage"];
+  tw_blurhash_encode: WasmApi["blurhashEncode"];
+  tw_blurhash_decode: WasmApi["blurhashDecode"];
+};
+
+const REQUIRED_EXPORTS = [
+  "memory",
+  "tw_alloc",
+  "tw_free",
+  "tw_thumbhash_encode",
+  "tw_thumbhash_decode",
+  "tw_thumbhash_average",
+  "tw_blurhash_encode",
+  "tw_blurhash_decode",
+] as const;
+
+/** Map the module's `tw_*` C-ABI symbols onto the camelCase wrapper API. */
+function bindExports(exports: Record<string, unknown>): WasmApi {
+  const missing = REQUIRED_EXPORTS.filter((name) => !(name in exports));
+  if (missing.length > 0) {
+    throw new Error(
+      `wasm module is missing exports: ${missing.join(", ")} — rebuild it with \`bun run build:wasm\``,
+    );
+  }
+  const e = exports as unknown as RawExports;
+  return {
+    memory: e.memory,
+    alloc: e.tw_alloc,
+    free: e.tw_free,
+    thumbhashEncode: e.tw_thumbhash_encode,
+    thumbhashDecode: e.tw_thumbhash_decode,
+    thumbhashAverage: e.tw_thumbhash_average,
+    blurhashEncode: e.tw_blurhash_encode,
+    blurhashDecode: e.tw_blurhash_decode,
+  };
+}
+
 let instance: WasmApi | null = null;
 let loading: Promise<WasmApi> | null = null;
 
@@ -48,7 +93,7 @@ export async function loadWasm(): Promise<WasmApi> {
       if (!res.ok) throw new Error(`failed to fetch wasm module (${res.status})`);
       const mod = await WebAssembly.compile(await res.arrayBuffer());
       const inst = await WebAssembly.instantiate(mod, {});
-      const e = inst.exports as unknown as WasmApi;
+      const e = bindExports(inst.exports as Record<string, unknown>);
       instance = e;
       return e;
     })();
@@ -101,7 +146,7 @@ export function thumbhashDecode(
     const rgba = new Uint8Array(wasm.memory.buffer, outPtr + 8, n - 8).slice();
     return { w, h, rgba };
   } finally {
-    wasm.free(input.ptr, input.len);
+    wasm.free(input.ptr, input.len || 1);
     wasm.free(outPtr, THUMBHASH_DECODE_CAP);
   }
 }
@@ -116,7 +161,7 @@ export function thumbhashAverage(wasm: WasmApi, hash: Uint8Array): [number, numb
     const out = new Uint8Array(wasm.memory.buffer, outPtr, 4);
     return [out[0], out[1], out[2], out[3]];
   } finally {
-    wasm.free(input.ptr, input.len);
+    wasm.free(input.ptr, input.len || 1);
     wasm.free(outPtr, 4);
   }
 }
@@ -159,7 +204,7 @@ export function blurhashDecode(
     if (n !== outCap) return null;
     return new Uint8Array(wasm.memory.buffer, outPtr, n).slice();
   } finally {
-    wasm.free(input.ptr, input.len);
+    wasm.free(input.ptr, input.len || 1);
     wasm.free(outPtr, outCap);
   }
 }

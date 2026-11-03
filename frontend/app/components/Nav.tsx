@@ -10,22 +10,6 @@ const links = [
   { href: "#quickstart", label: "Quick start" },
 ];
 
-export function TumbleweedMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className={className} aria-hidden="true">
-      <circle cx="24" cy="24" r="21" className="fill-accent/20" />
-      <g stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-        <path d="M8 30c8-10 16-2 26-14" />
-        <path d="M10 20c10 6 14-4 28 2" />
-        <path d="M12 34c6-4 18 2 24-8" />
-        <path d="M16 12c2 8 12 6 18 18" />
-        <path d="M24 6v36" opacity="0.35" />
-        <path d="M6 24h36" opacity="0.35" />
-      </g>
-    </svg>
-  );
-}
-
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -50,11 +34,13 @@ export default function Nav() {
             : "mt-4 py-3"
         }`}
       >
-        <a href="#top" className="flex items-center gap-2.5 text-base-content">
-          <TumbleweedMark className="size-9 text-primary transition-transform duration-500 hover:rotate-180" />
-          <span className="font-display text-xl font-semibold tracking-tight">
-            thumbleweed
-          </span>
+        <a href="#top" className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/thumbleweed-animated.svg"
+            alt="thumbleweed"
+            className="h-9 w-auto sm:h-10"
+          />
         </a>
 
         <nav className="hidden items-center gap-1 md:flex">

@@ -158,7 +158,13 @@ export default function Playground() {
         >
           {!wasm && !error && (
             <div className="flex items-center justify-center gap-3 py-16 text-base-content/60">
-              <span className="loading loading-spinner loading-md text-primary" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/thumbleweed-mark-animated.svg" alt="" className="size-10" />
+              </motion.div>
               Loading the Rust module…
             </div>
           )}
