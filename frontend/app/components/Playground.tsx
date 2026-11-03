@@ -204,14 +204,8 @@ export default function Playground() {
                   }}
                 />
                 <motion.div animate={busy ? { rotate: 360 } : { rotate: 0 }} transition={busy ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}>
-                  <svg viewBox="0 0 48 48" fill="none" className="size-12 text-primary" aria-hidden="true">
-                    <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M8 30c8-10 16-2 26-14" />
-                      <path d="M10 20c10 6 14-4 28 2" />
-                      <path d="M12 34c6-4 18 2 24-8" />
-                      <path d="M16 12c2 8 12 6 18 18" />
-                    </g>
-                  </svg>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/thumbleweed.svg" alt="" className="size-12" />
                 </motion.div>
                 <p className="font-medium">
                   {busy ? "Stamping hashes…" : "Drop an image here, or click to pick one"}
