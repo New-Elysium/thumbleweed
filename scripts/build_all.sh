@@ -6,7 +6,7 @@
 #   ./build_all.sh --upload # build + upload to PyPI via twine
 #
 # Prerequisites:
-#   - Python 3.10, 3.11, 3.12, 3.13, 3.13-nogil, 3.14, 3.14-nogil
+#   - Python 3.11, 3.12, 3.13, 3.13-nogil, 3.14, 3.14-nogil, 3.15, 3.15-nogil
 #     installed and on PATH
 #   - A venv at .venv with maturin (and twine if using --upload)
 #   - Rust toolchain (stable)
@@ -29,13 +29,14 @@ mkdir -p dist/
 
 # All supported interpreters (GIL + free-threaded)
 INTERPRETERS=(
-    python3.10
     python3.11
     python3.12
     python3.13
     python3.13-nogil
     python3.14
     python3.14-nogil
+    python3.15
+    python3.15-nogil
 )
 
 for py in "${INTERPRETERS[@]}"; do
@@ -47,7 +48,11 @@ for py in "${INTERPRETERS[@]}"; do
     echo "========================================"
     echo "Building for $py ($($py --version 2>&1))"
     echo "========================================"
-    maturin build --release --out dist --interpreter "$py" --skip-auditwheel
+    # --compatibility off: the host glibc is usually newer than the
+    # manylinux_2_28 policy configured in pyproject.toml, and maturin
+    # enforces that policy (it would fail the build). Local wheels are
+    # untagged; CI builds proper manylinux_2_28 wheels in Docker.
+    maturin build --release --out dist --interpreter "$py" --compatibility off
     echo ""
 done
 

@@ -26,10 +26,8 @@ jobs:
                       platform: linux-x86_64
                       target: x86_64
                       manylinux: "auto"
-                    # NOTE: ubuntu-latest is now 26.04, whose Docker 29.4.2 blocks
-                    # the socketcall syscall, leaving i386 containers with no
-                    # network (maturin-action's i686 libatomic bootstrap then
-                    # fails to reach the AlmaLinux/CentOS vault repos).
+                    # i386 targets need ubuntu-24.04: Docker on 26.04 blocks
+                    # socketcall, leaving i386 containers without network.
                     # https://github.com/actions/runner-images/issues/14790
                     - os: ubuntu-24.04
                       platform: linux-i686
@@ -171,14 +169,28 @@ jobs:
                 include:
                     - python-version: "3.11"
                       python-tag: "311"
+                      abi-tag: "311"
                     - python-version: "3.12"
                       python-tag: "312"
+                      abi-tag: "312"
                     - python-version: "3.13"
                       python-tag: "313"
+                      abi-tag: "313"
+                    - python-version: "3.13t"
+                      python-tag: "313"
+                      abi-tag: "313t"
                     - python-version: "3.14"
                       python-tag: "314"
+                      abi-tag: "314"
+                    - python-version: "3.14t"
+                      python-tag: "314"
+                      abi-tag: "314t"
                     - python-version: "3.15"
                       python-tag: "315"
+                      abi-tag: "315"
+                    - python-version: "3.15t"
+                      python-tag: "315"
+                      abi-tag: "315t"
         steps:
             - uses: actions/checkout@v6
 
@@ -201,7 +213,7 @@ jobs:
 
             - name: Install built wheel into uv environment
               run: |
-                  uv pip install dist/thumbleweed-*cp${{ matrix.python-tag }}*manylinux*x86_64.whl
+                  uv pip install dist/thumbleweed-*cp${{ matrix.python-tag }}-cp${{ matrix.abi-tag }}-*manylinux*x86_64.whl
 
             - name: Run tests
               run: uv run pytest -v

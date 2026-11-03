@@ -23,7 +23,7 @@ It ships **five** subsystems under one wheel, with zero mandatory Python depende
 - Pure-Rust algorithms — no C extensions, no NumPy, no OpenCV
 - Pillow (`>11`) is **optional** — needed only for the `encode_image` / `decode_image` helpers that accept `PIL.Image` objects
 - Fully typed: `py.typed` marker + `.pyi` stub file for `_core`
-- Supports CPython 3.10–3.14 including free-threaded (`3.13t`, `3.14t`)
+- Supports CPython 3.11–3.15 including free-threaded (`3.13t`, `3.14t`, `3.15t`)
 - GIL released for all CPU-bound operations via `py.detach()`
 
 ---
@@ -139,12 +139,12 @@ Raw pixel-level APIs (`thumbhash_encode`, `blurhash_encode`) accept `bytes`, `by
 
 ### Python (runtime)
 - **None** — zero mandatory runtime dependencies
-- `Pillow >11` optional (for `encode_image` / `decode_image` helpers)
+- `Pillow >=13` optional (for `encode_image` / `decode_image` helpers)
 
 ### Python (dev)
 ```
 maturin >=1.10,<2
-Pillow >12
+Pillow >=13
 pytest >=9
 ```
 
@@ -239,7 +239,7 @@ the call is also a no-op so `compress=True` is always safe to leave on.
 ### Build
 ```bash
 python -m venv .venv && . .venv/bin/activate
-pip install "maturin>=1.10,<2" "Pillow>12" pytest
+pip install "maturin>=1.10,<2" "Pillow>=13" pytest
 maturin develop                       # debug build, default features (no pixo, no auto-thumbnail)
 maturin develop --release             # optimised build, default features
 maturin develop --release --features pixo            # + JPEG/PNG compression
@@ -262,36 +262,41 @@ python tests/bench_comparison.py --rounds 5 --warmup 2 --iters 500
 ### Build wheels (local)
 
 All supported Python interpreters must be installed on PATH:
-`python3.10`, `python3.11`, `python3.12`, `python3.13`, `python3.13-nogil`, `python3.14`, `python3.14-nogil`
+`python3.11`, `python3.12`, `python3.13`, `python3.13-nogil`, `python3.14`, `python3.14-nogil`, `python3.15`, `python3.15-nogil`
 
 On Ubuntu, install them via the [deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa):
 ```bash
 sudo add-apt-repository -y ppa:deadsnakes/ppa
-sudo apt-get install -y python3.10-dev python3.11-dev python3.12-dev python3.13-dev python3.13-nogil python3.14-dev python3.14-nogil
+sudo apt-get install -y python3.11-dev python3.12-dev python3.13-dev python3.13-nogil python3.14-dev python3.14-nogil python3.15-dev python3.15-nogil
 ```
 
 Then run the build script:
 ```bash
 chmod +x build_all.sh
-./build_all.sh            # builds 7 wheels + sdist into dist/
+./build_all.sh            # builds 8 wheels + sdist into dist/
 ./build_all.sh --upload   # build + upload to PyPI via twine
 ```
 
 The script:
 1. Iterates over every supported interpreter (GIL + free-threaded)
-2. Calls `maturin build --release --skip-auditwheel` for each
+2. Calls `maturin build --release --compatibility off` for each
 3. Builds an sdist with `maturin sdist`
 4. Validates all artifacts with `twine check`
 
-> **Note:** `--skip-auditwheel` is needed because the host glibc is typically
-> too new for manylinux compliance. For production manylinux-compliant wheels,
-> use the CI workflow (below) which builds inside the manylinux Docker image.
+> **Note:** local builds use `--compatibility off` because the host glibc is
+> typically too new for the `manylinux_2_28` policy configured in
+> `pyproject.toml`. Maturin *enforces* that policy when it is set — a native
+> build fails with "not manylinux_2_28 compliant" because the host glibc leaks
+> newer symbol versions (e.g. `GLIBC_2.34`) into the extension. Using
+> `--compatibility off` produces an untagged local wheel for testing only.
+> For production manylinux-compliant wheels, use the CI workflow (below),
+> which builds inside the manylinux_2_28 Docker image.
 
 ### Release / CI
 - Wheels are built by `.github/workflows/` on `v*` tags via `maturin-action`
 - Targets: Linux x86_64, i686, aarch64, armv7 (manylinux_2_28 images), macOS x86_64 + aarch64, Windows x86_64 + i686 + aarch64
-- All supported Python versions (3.10–3.14 including free-threaded `t` builds) are built per target
-- CI uses the manylinux Docker image so wheels are portable (no `--skip-auditwheel` needed)
+- All supported Python versions (3.11–3.15 including free-threaded `t` builds) are built per target
+- CI uses the manylinux Docker image so wheels are portable (and correctly tagged `manylinux_2_28`)
 
 ---
 

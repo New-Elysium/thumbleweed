@@ -23,9 +23,9 @@ Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). 
 - ✅ **ColorThief** — dominant colour + palette extraction (drop-in for [`colorthief`](https://pypi.org/project/colorthief/) & [`fast-colorthief`](https://pypi.org/project/fast-colorthief/))
 - ✅ **Thumbnails** — real rasterised thumbnails for **images, videos (MP4), and PDFs**, with a pure-Rust crude fallback that needs **no ffmpeg, no pdfium**
 - ✅ **Compression** — optional pixo-powered JPEG/PNG re-encoder, auto-applied to thumbnail output (mozjpeg/oxipng-class quality, pure Rust)
-- ✅ Python 3.10 – 3.14 (including free-threaded `3.13t` / `3.14t`)
+- ✅ Python 3.11 – 3.15 (including free-threaded `3.13t` / `3.14t` / `3.15t`)
 - ✅ Pre-built wheels for **Windows** | **Linux**  `x86`, `AMD64`, `ARM64` and **macOS** `Intel Based` | `Apple Silicon`
-- ✅ Pillow > 11 integration (optional)
+- ✅ Pillow > 13.0 integration (optional)
 - ✅ Typed (`py.typed` + `.pyi` stubs)
 - ✅ Pure-Rust core — no C extensions, no NumPy required
 
@@ -365,10 +365,10 @@ make test   # run Python + Rust tests
 
 ## Running Benchmarks
 
-Benchmarks require `bench` dependencies which might not be compatible with all Python versions (e.g. `thumbhash-python` fails to resolve on Python 3.14). To avoid conflicts, run them with a supported Python version (e.g. 3.12):
+Benchmarks require `bench` dependencies which are not compatible with every Python version (`blurhash-python` has no wheels for 3.13+, `fast-colorthief` none for 3.15+). To avoid conflicts, run them with a fully supported Python version (e.g. 3.12):
 
 ```bash
-# Sync using a Python version that supports the benchmark dependencies
+# Sync using a Python version that supports all benchmark dependencies
 uv sync --group bench --python 3.12
 uv run python tests/bench_comparison.py
 
