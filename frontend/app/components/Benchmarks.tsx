@@ -51,9 +51,9 @@ function Bar({
   active: boolean;
 }) {
   const animatedFactor = useCountUp(factor, active);
-  // Each pair shares one scale: the slower of the two fills the track and the
-  // faster one is proportional to it, so bar length reads as the ratio instead
-  // of being measured against an arbitrary global axis.
+  // Each pair shares one scale: the slower bar fills the track and the faster
+  // bar stays proportional to it, so the gap between them matches the
+  // speed-up factor.
   const slowest = Math.max(mine, theirs);
   const widthFor = (v: number) =>
     Math.max(MIN_BAR_WIDTH, Math.min(100, (v / slowest) * 100));
@@ -133,8 +133,8 @@ export default function Benchmarks() {
         </h2>
         <p className="mt-3 text-base-content/70">
           Mean per-call latency over the real test-fixture images (5 rounds × 100 iterations).
-          Lower is better; each pair is scaled to its own slower bar, so bar length tracks
-          latency directly. Full methodology lives in the repo README.
+          Lower is better; each pair shares one scale anchored to its slower bar, so bar length
+          tracks latency directly. Full methodology lives in the repo README.
         </p>
       </motion.div>
 
@@ -144,7 +144,7 @@ export default function Benchmarks() {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.5 }}
-        className="grid gap-x-10 gap-y-8 rounded-box bg-base-100 p-6 shadow-sm ring-1 ring-base-300 md:grid-cols-2 sm:p-8"
+        className="grid gap-x-10 gap-y-8 rounded-box bg-base-100 p-6 shadow-sm ring-1 ring-base-300 lg:grid-cols-2 sm:p-8"
       >
         { rows.map((row, i) => (
           <Bar key={row.op} label={row.op} competitor={row.competitor} mine={row.mine} theirs={row.theirs} factor={row.factor} index={i} active={inView} />

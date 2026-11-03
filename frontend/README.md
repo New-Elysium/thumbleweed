@@ -38,7 +38,7 @@ bun install          # install deps
 bun run dev          # dev server (http://localhost:3001)
 bun run build        # production build
 bun run start        # preview the production build
-bun run deploy       # build + deploy to Cloudflare (Workers/custom domain)
+bun run deploy       # build + deploy to Cloudflare (thumbleweed.org custom domains)
 bun run build:wasm   # rebuild public/wasm/thumbleweed.wasm from Rust sources
 ```
 
@@ -48,12 +48,13 @@ bun run build:wasm   # rebuild public/wasm/thumbleweed.wasm from Rust sources
 
 ## Deployment
 
-`bun run deploy` uses `@vinext/cloudflare deploy`. First-time auth:
+`bun run deploy` uses `@vinext/cloudflare deploy` (auth via `cf`). First-time auth:
 
 ```bash
-cf auth login                    # or: export CLOUDFLARE_API_TOKEN=...
-export CLOUDFLARE_ACCOUNT_ID=…   # or set accountId in cloudflare.config.ts
+bunx cf auth login               # or: export CLOUDFLARE_API_TOKEN=...
 ```
 
-Then attach the `thumbleweed.org` custom domain in the Cloudflare dashboard (Workers →
-your worker → Domains & Routes).
+The `thumbleweed.org` and `www.thumbleweed.org` custom domains and the zone routing are
+declared in `cloudflare.config.ts` (`domains`, `workersDev: false`) and applied on every
+deploy — no dashboard steps needed. The workers.dev preview URL is intentionally disabled;
+the site is served exclusively from the zone.

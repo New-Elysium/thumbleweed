@@ -15,8 +15,10 @@
 </a>
 </p>
 
-**Unified image hashing, thumbnailing, and compression for Python.**  
+**Unified image hashing, thumbnailing, and compression for Python.**
 Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). Zero mandatory dependencies.
+
+🌐 **Live playground & demo: [thumbleweed.org](https://thumbleweed.org)** — run ThumbHash/BlurHash in your browser via WASM.
 
 - ✅ **ThumbHash** — compact image placeholder hashes (drop-in for [`thumbhash`](https://pypi.org/project/thumbhash/) & [`fast-thumbhash`](https://pypi.org/project/fast-thumbhash/))
 - ✅ **BlurHash** — smooth gradient placeholders (drop-in for [`blurhash-python`](https://pypi.org/project/blurhash/))

@@ -84,10 +84,10 @@ body {
 }
 
 /* Quick-start code tabs.
-   DaisyUI tints inactive tabs with --color-base-content (dark bark) and
-   hovers them with the same colour, which disappears against the dark code
-   panel. Re-point the tabs at the panel's own content colour instead.
-   `!important` is needed to outrank DaisyUI's high-specificity tab rules. */
+   DaisyUI tints inactive tabs with --color-base-content (dark bark) and uses
+   the same colour on hover. Both vanish against the dark code panel, so these
+   rules point the tabs at the panel's own content colour instead. The
+   !important flags outrank DaisyUI's high-specificity tab rules. */
 .code-tabs .tab {
   color: color-mix(in oklab, var(--color-neutral-content) 65%, transparent) !important;
 }
