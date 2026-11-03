@@ -5,7 +5,7 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.2.2"
+version         = "0.2.3"
 description     = "Unified image hashing & Color extraction — ThumbHash, BlurHash, and ColorThief -- 3-in-1"
 readme          = "README.md"
 license         = { text = "MIT" }
@@ -68,7 +68,7 @@ features      = ["pyo3/extension-module"]
 strip         = true
 # Build free-threaded wheels for CPython 3.13t / 3.14t as well
 # (maturin >= 1.7 picks this up automatically when the interpreter is "t")
-compatibility = "manylinux2014"
+compatibility = "manylinux_2_28"
 # Explicitly include the backward-compatible shim packages in wheels/sdists.
 include = [
   { path = "python/thumbhash/**/*.py", format = ["sdist", "wheel"] },

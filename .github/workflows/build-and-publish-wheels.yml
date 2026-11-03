@@ -25,21 +25,21 @@ jobs:
                     - os: ubuntu-latest
                       platform: linux-x86_64
                       target: x86_64
-                      manylinux: auto
+                      manylinux: "2_28"
                     - os: ubuntu-latest
                       platform: linux-i686
                       target: i686
-                      manylinux: auto
+                      manylinux: "2_28"
                     # Native Linux ARM64 build
                     - os: ubuntu-24.04-arm
                       platform: linux-aarch64
                       target: aarch64
-                      manylinux: auto
+                      manylinux: "2_28"
                       arch: arm64
                     - os: ubuntu-latest
                       platform: linux-armv7
                       target: armv7
-                      manylinux: auto
+                      manylinux: "2_28"
 
                     # ── macOS ──────────────────────────────────────────────────────────
                     - os: macos-26-intel

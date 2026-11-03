@@ -289,7 +289,7 @@ The script:
 
 ### Release / CI
 - Wheels are built by `.github/workflows/` on `v*` tags via `maturin-action`
-- Targets: Linux x86_64 + aarch64 (manylinux2014), macOS x86_64 + aarch64, Windows x86_64
+- Targets: Linux x86_64, i686, aarch64, armv7 (manylinux_2_28 images), macOS x86_64 + aarch64, Windows x86_64 + i686 + aarch64
 - All supported Python versions (3.10–3.14 including free-threaded `t` builds) are built per target
 - CI uses the manylinux Docker image so wheels are portable (no `--skip-auditwheel` needed)
 
