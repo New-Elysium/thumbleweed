@@ -52,7 +52,7 @@ export default function Footer() {
 
         <div className="rope-divider mt-10" />
         <p className="mt-4 text-center font-mono text-xs text-[#efe3cc]/50">
-          © {new Date().getFullYear()} thumbleweed contributors · MIT Licence · tumbleweeds roll
+          © {new Date().getFullYear()} Srikanth Gopalakrishnan · MIT Licence · tumbleweeds roll
           free
         </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}

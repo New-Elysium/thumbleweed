@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const fadeUp = {
@@ -59,6 +59,7 @@ function PrairieGrass() {
 }
 
 export default function Hero() {
+  const [launching, setLaunching] = useState(false);
   const [copied, setCopied] = useState(false);
   const [encodeUs, setEncodeUs] = useState(0);
 
@@ -80,10 +81,14 @@ export default function Hero() {
     try {
       await navigator.clipboard.writeText("pip install thumbleweed");
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
-      // clipboard unavailable (e.g. insecure context) — ignore
+      // clipboard unavailable (e.g. insecure context) — still redirect
     }
+    setLaunching(true);
+    setTimeout(() => {
+      window.location.href = "https://pypi.org/project/thumbleweed/";
+    }, 1000);
   };
 
   return (
@@ -155,9 +160,14 @@ export default function Hero() {
           <button onClick={copyInstall} className="btn btn-primary btn-lg font-mono">
             <span aria-hidden="true">$</span>
             <code className="text-base">pip install thumbleweed</code>
-            {copied ? (
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-1">
-                ✓
+            {launching ? (
+              <motion.span
+                animate={{ x: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                className="ml-1"
+                aria-hidden="true"
+              >
+                →
               </motion.span>
             ) : (
               <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 opacity-70" aria-hidden="true">
@@ -199,6 +209,23 @@ export default function Hero() {
         </motion.div>
       </div>
       <PrairieGrass />
+
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="toast toast-bottom toast-center"
+            role="status"
+          >
+            <div className="alert alert-success">
+              <span>Copied to clipboard</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
