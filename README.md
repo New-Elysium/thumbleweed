@@ -23,7 +23,7 @@ Rust-powered via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/). 
 - ✅ **ColorThief** — dominant colour + palette extraction (drop-in for [`colorthief`](https://pypi.org/project/colorthief/) & [`fast-colorthief`](https://pypi.org/project/fast-colorthief/))
 - ✅ **Thumbnails** — real rasterised thumbnails for **images, videos (MP4), and PDFs**, with a pure-Rust crude fallback that needs **no ffmpeg, no pdfium**
 - ✅ **Compression** — optional pixo-powered JPEG/PNG re-encoder, auto-applied to thumbnail output (mozjpeg/oxipng-class quality, pure Rust)
-- ✅ Python 3.11 – 3.15 (including free-threaded `3.13t` / `3.14t` / `3.15t`)
+- ✅ Python 3.11 – 3.15 (including free-threaded `3.14t` / `3.15t`)
 - ✅ Pre-built wheels for **Windows** | **Linux**  `x86`, `AMD64`, `ARM64` and **macOS** `Intel Based` | `Apple Silicon`
 - ✅ Pillow > 13.0 integration (optional)
 - ✅ Typed (`py.typed` + `.pyi` stubs)

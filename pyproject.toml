@@ -5,7 +5,11 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.2.5"
+version         = "0.2.6"
+authors         = [{ name = "Srikanth Gopalakrishnan", email = "srikanth@thumbleweed.org" }]
+maintainers     = [{ name = "Srikanth Gopalakrishnan", email = "srikanth@thumbleweed.org" }]
+homepage        = "https://thumbleweed.org"
+repository      = "https://github.com/New-Elysium/thumbleweed"
 description     = "Unified image hashing & Color extraction — ThumbHash, BlurHash, and ColorThief -- 3-in-1"
 readme          = "README.md"
 license         = { text = "MIT" }

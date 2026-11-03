@@ -23,7 +23,9 @@ It ships **five** subsystems under one wheel, with zero mandatory Python depende
 - Pure-Rust algorithms — no C extensions, no NumPy, no OpenCV
 - Pillow (`>11`) is **optional** — needed only for the `encode_image` / `decode_image` helpers that accept `PIL.Image` objects
 - Fully typed: `py.typed` marker + `.pyi` stub file for `_core`
-- Supports CPython 3.11–3.15 including free-threaded (`3.13t`, `3.14t`, `3.15t`)
+- Supports CPython 3.11–3.15 including free-threaded (`3.14t`, `3.15t`)
+  (3.13t has no prebuilt Linux wheels: the manylinux images no longer ship
+  a 3.13t interpreter; macOS/Windows builds do not produce FT wheels either)
 - GIL released for all CPU-bound operations via `py.detach()`
 
 ---
