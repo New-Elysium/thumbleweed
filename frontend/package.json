@@ -1,0 +1,36 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.4.4",
+  "dependencies": {
+    "@vinext/cloudflare": "^1.3.2",
+    "daisyui": "^5.7.50",
+    "framer-motion": "^14.9.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-server-dom-webpack": "^19.3.1",
+    "vinext": "^1.4.2"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-beta.v.10",
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "^6.2.1",
+    "@vitejs/plugin-rsc": "^0.5.38",
+    "cf": "^1.0.0-beta.27",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "8.3.0"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js dev",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "start": "node node_modules/vite/bin/vite.js preview",
+    "deploy": "node node_modules/@vinext/cloudflare/dist/cli.js deploy",
+    "build:wasm": "cargo build --release --target wasm32-unknown-unknown --manifest-path wasm-thumbleweed/Cargo.toml && cp wasm-thumbleweed/target/wasm32-unknown-unknown/release/thumbleweed_wasm.wasm public/wasm/thumbleweed.wasm"
+  }
+}

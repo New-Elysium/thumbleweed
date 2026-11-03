@@ -1,0 +1,17 @@
+[package]
+name = "thumbleweed-wasm"
+version = "0.2.6"
+edition = "2024"
+license = "MIT"
+description = "WASM build of thumbleweed's ThumbHash + BlurHash cores for the website playground"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true
