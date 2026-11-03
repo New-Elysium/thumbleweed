@@ -25,21 +25,27 @@ jobs:
                     - os: ubuntu-latest
                       platform: linux-x86_64
                       target: x86_64
-                      manylinux: "2_28"
-                    - os: ubuntu-latest
+                      manylinux: "auto"
+                    # NOTE: ubuntu-latest is now 26.04, whose Docker 29.4.2 blocks
+                    # the socketcall syscall, leaving i386 containers with no
+                    # network (maturin-action's i686 libatomic bootstrap then
+                    # fails to reach the AlmaLinux/CentOS vault repos).
+                    # https://github.com/actions/runner-images/issues/14790
+                    - os: ubuntu-24.04
                       platform: linux-i686
                       target: i686
-                      manylinux: "2_28"
+                      manylinux: "auto"
                     # Native Linux ARM64 build
-                    - os: ubuntu-24.04-arm
+                    - os: ubuntu-26.04-arm
                       platform: linux-aarch64
                       target: aarch64
-                      manylinux: "2_28"
+                      manylinux: "auto"
                       arch: arm64
-                    - os: ubuntu-latest
+                    # armv7 is an i386-family target: same socketcall restriction
+                    - os: ubuntu-24.04
                       platform: linux-armv7
                       target: armv7
-                      manylinux: "2_28"
+                      manylinux: "auto"
 
                     # ── macOS ──────────────────────────────────────────────────────────
                     - os: macos-26-intel
