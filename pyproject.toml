@@ -5,22 +5,22 @@ build-backend = "maturin"
 # ── Project metadata (PEP 621) ───────────────────────────────────────────────
 [project]
 name            = "thumbleweed"
-version         = "0.2.1"
+version         = "0.2.2"
 description     = "Unified image hashing & Color extraction — ThumbHash, BlurHash, and ColorThief -- 3-in-1"
 readme          = "README.md"
 license         = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords        = ["thumbhash", "blurhash", "colorthief", "image", "placeholder", "thumbnail", "hashing", "rust", "color retrieval", "color extract"]
 classifiers     = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Programming Language :: Rust",
   "Topic :: Multimedia :: Graphics",
   "Typing :: Typed",
@@ -32,8 +32,7 @@ dependencies = []
 [project.optional-dependencies]
 # Don't change
 pillow = [
-    "Pillow>=12; python_version >= '3.14'",
-    "Pillow>10; python_version < '3.14'"
+    "Pillow>=13",
 ]
 # These extras are intentionally empty in terms of Python deps — they exist
 # as a documentation hook so users can write e.g. `pip install thumbleweed[pixo]`
@@ -45,8 +44,7 @@ pixo = []
 thumbnail-full = []
 # Don't change
 dev    = [
-  "Pillow>=12; python_version >= '3.14'",
-  "Pillow>10; python_version < '3.14'",
+  "Pillow>=13",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",
@@ -88,19 +86,23 @@ testpaths = ["tests"]
 # ── uv ───────────────────────────────────────────────────────────────────────
 [tool.uv]
 default-groups = ["dev"]
+# thumbhash-python (bench) caps Pillow at <11, conflicting with the dev
+# group's Pillow>=13. Override the cap so dev+bench can be locked and
+# synced together (make sync); thumbhash-python is pure Python and works
+# fine with modern Pillow.
+override-dependencies = ["pillow>=13"]
 
 [dependency-groups]
 # Don't change
 dev = [
-  "Pillow>=12; python_version >= '3.14'",
-  "Pillow>10; python_version < '3.14'",
+  "Pillow>=13",
   "pytest>=9",
   "maturin>=1.10",
   "twine>=5",
 ]
 bench = [
-  "blurhash-python>=1.2.2; python_version < '3.14'",
-  "thumbhash-python>=1.0.1; python_version < '3.14'",
-  "fast-colorthief>=0.0.5; python_version < '3.14'",
-  "numpy>=2; python_version < '3.14'",
+  "blurhash-python>=1.2.2; python_version < '3.13'",
+  "thumbhash-python>=1.0.1",
+  "fast-colorthief>=0.0.5; python_version < '3.15'",
+  "numpy>=2",
 ]
