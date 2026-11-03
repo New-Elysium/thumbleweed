@@ -29,6 +29,10 @@ function useCountUp(target: number, active: boolean, duration = 1400) {
   return value;
 }
 
+// Smallest bar we still draw, so a very fast call stays visible as a sliver
+// instead of collapsing to a 1px line.
+const MIN_BAR_WIDTH = 3;
+
 function Bar({
   label,
   competitor,
@@ -47,11 +51,12 @@ function Bar({
   active: boolean;
 }) {
   const animatedFactor = useCountUp(factor, active);
-  // Bar width: relative slowness on a log scale so both stay visible
-  const widthFor = (v: number) => {
-    const max = Math.log10(30000);
-    return Math.max(3, (Math.log10(v) / max) * 100);
-  };
+  // Each pair shares one scale: the slower of the two fills the track and the
+  // faster one is proportional to it, so bar length reads as the ratio instead
+  // of being measured against an arbitrary global axis.
+  const slowest = Math.max(mine, theirs);
+  const widthFor = (v: number) =>
+    Math.max(MIN_BAR_WIDTH, Math.min(100, (v / slowest) * 100));
   const wins = factor >= 1.5;
 
   return (
@@ -60,14 +65,16 @@ function Bar({
       animate={active ? { opacity: 1, y: 0 } : {}}
       transition={{ delay: index * 0.08, duration: 0.5 }}
     >
-      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
+      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="font-medium">{label}</span>
-        <span className="text-xs text-base-content/60">vs {competitor}</span>
+        <span className="text-xs text-base-content/70">vs {competitor}</span>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <span className="w-24 shrink-0 font-mono text-xs text-secondary">thumbleweed</span>
-          <div className="h-4 flex-1 overflow-hidden rounded-field bg-base-200">
+          <span className="w-20 shrink-0 font-mono text-xs text-secondary sm:w-24">
+            thumbleweed
+          </span>
+          <div className="h-4 min-w-0 flex-1 overflow-hidden rounded-field bg-base-200">
             <motion.div
               className="h-full rounded-field bg-secondary"
               initial={{ width: 0 }}
@@ -75,13 +82,15 @@ function Bar({
               transition={{ delay: index * 0.08 + 0.15, duration: 0.7, ease: "easeOut" }}
             />
           </div>
-          <span className="w-20 shrink-0 text-right font-mono text-xs">
+          <span className="w-16 shrink-0 text-right font-mono text-xs text-base-content/70 sm:w-20">
             {mine < 1000 ? `${mine} µs` : `${(mine / 1000).toFixed(1)} ms`}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-24 shrink-0 truncate font-mono text-xs text-base-content/50">competitor</span>
-          <div className="h-4 flex-1 overflow-hidden rounded-field bg-base-200">
+          <span className="w-20 shrink-0 truncate font-mono text-xs text-base-content/70 sm:w-24">
+            competitor
+          </span>
+          <div className="h-4 min-w-0 flex-1 overflow-hidden rounded-field bg-base-200">
             <motion.div
               className="h-full rounded-field bg-base-content/30"
               initial={{ width: 0 }}
@@ -89,13 +98,15 @@ function Bar({
               transition={{ delay: index * 0.08 + 0.3, duration: 0.7, ease: "easeOut" }}
             />
           </div>
-          <span className="w-20 shrink-0 text-right font-mono text-xs text-base-content/60">
+          <span className="w-16 shrink-0 text-right font-mono text-xs text-base-content/70 sm:w-20">
             {theirs < 1000 ? `${theirs} µs` : `${(theirs / 1000).toFixed(1)} ms`}
           </span>
         </div>
       </div>
-      <div className={`mt-1 text-right text-sm font-semibold ${wins ? "text-primary" : "text-base-content/50"}`}>
-        {wins ? `⚡ ${animatedFactor.toFixed(1)}× faster` : factor < 1.5 ? "~ on par" : ""}
+      <div
+        className={`mt-1 text-right text-sm font-semibold ${wins ? "text-primary" : "text-base-content/70"}`}
+      >
+        {wins ? `⚡ ${animatedFactor.toFixed(1)}× faster` : "~ on par"}
       </div>
     </motion.div>
   );
@@ -122,7 +133,8 @@ export default function Benchmarks() {
         </h2>
         <p className="mt-3 text-base-content/70">
           Mean per-call latency over the real test-fixture images (5 rounds × 100 iterations).
-          Lower is better; bars are log-scaled. Full methodology lives in the repo README.
+          Lower is better; each pair is scaled to its own slower bar, so bar length tracks
+          latency directly. Full methodology lives in the repo README.
         </p>
       </motion.div>
 
@@ -138,7 +150,7 @@ export default function Benchmarks() {
           <Bar key={row.op} label={row.op} competitor={row.competitor} mine={row.mine} theirs={row.theirs} factor={row.factor} index={i} active={inView} />
         ))}
       </motion.div>
-      <p className="mt-4 text-center text-xs text-base-content/50">
+      <p className="mt-4 text-center text-xs text-base-content/70">
         ThumbHash &amp; ColorThief timings include full image decode — real end-to-end usage, not
         just the inner loop.
       </p>

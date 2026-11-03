@@ -126,7 +126,7 @@ export default function CodeShowcase() {
           className="wood-panel rounded-box p-1.5 shadow-xl"
         >
           <div className="rounded-box bg-neutral p-4 text-neutral-content">
-            <div role="tablist" className="tabs tabs-border mb-3">
+            <div role="tablist" className="code-tabs tabs tabs-border mb-3">
               {snippets.map((s) => (
                 <button
                   key={s.id}
