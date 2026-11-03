@@ -6,6 +6,8 @@ export default defineConfig({
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-03",
     compatibilityFlags: ["nodejs_compat"],
+    workersDev: false,
+    domains: ["thumbleweed.org", "www.thumbleweed.org"],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",
