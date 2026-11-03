@@ -126,8 +126,8 @@ export default function Playground() {
 
   return (
     <section id="playground" className="relative py-20">
-      <div className="wood-panel -skew-y-1 absolute inset-0 -z-10" aria-hidden="true" />
-      <div className="relative mx-auto max-w-6xl px-4 py-4 sm:px-6">
+      <div className="wood-panel -skew-y-1 absolute inset-0" aria-hidden="true" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

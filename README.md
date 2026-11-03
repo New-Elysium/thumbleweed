@@ -1,8 +1,8 @@
 # thumbleweed 🌵
 
 <p align="center">
-<a href="https://github.com/New-Elysium/thumbleweed/actions?query=workflow%3A%22Build+%26+Publish+Wheels%22+branch%3Amain" target="_blank">
-    <img src="https://github.com/New-Elysium/thumbleweed/actions/workflows/build-and-publish-wheels.yml/badge.svg?branch=main" alt="Build & Publish Wheels">
+<a href="https://github.com/New-Elysium/thumbleweed/actions/workflows/build-and-publish-wheels.yml?query=event%3Apush" target="_blank">
+    <img src="https://github.com/New-Elysium/thumbleweed/actions/workflows/build-and-publish-wheels.yml/badge.svg?event=push" alt="Build & Publish Wheels">
 </a>
 <a href="https://pypi.org/project/thumbleweed" target="_blank">
     <img src="https://img.shields.io/pypi/v/thumbleweed?color=%2334D058&label=pypi%20package" alt="Package version">
